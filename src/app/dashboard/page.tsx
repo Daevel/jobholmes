@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check, CircleGauge, CircleX, TrendingUp } from "lucide-react";
 import { AppShell, ApplicationMobileCard, ButtonLink, EmptyState, MatchBadge, MetricCard, OutcomeBadge, PageHeader, SecondaryMetric, SectionCard, StageBadge } from "@/components/application-ui";
 import { formatDate } from "@/lib/applications/display";
 import { getApplicationStatsForUser, getRecentApplicationsForUser, type ApplicationStats, type RecentApplication } from "@/lib/applications/service";
@@ -33,10 +34,10 @@ export default async function DashboardPage() {
 
 function PrimaryMetrics({ stats }: { stats: ApplicationStats }) {
   const kpis = [
-    { label: "Total applications", value: stats.total, tone: "blue", icon: <ChartIcon /> },
-    { label: "In progress", value: stats.inProgress, tone: "blue", icon: <ProgressIcon /> },
-    { label: "Strong matches", value: stats.strongMatches, tone: "green", icon: <MatchIcon /> },
-    { label: "Rejected", value: stats.rejected, tone: "red", icon: <CloseIcon /> },
+    { label: "Total applications", value: stats.total, tone: "blue", icon: <TrendingUp aria-hidden="true" className="h-4 w-4" /> },
+    { label: "In progress", value: stats.inProgress, tone: "blue", icon: <CircleGauge aria-hidden="true" className="h-4 w-4" /> },
+    { label: "Strong matches", value: stats.strongMatches, tone: "green", icon: <Check aria-hidden="true" className="h-4 w-4" /> },
+    { label: "Rejected", value: stats.rejected, tone: "red", icon: <CircleX aria-hidden="true" className="h-4 w-4" /> },
   ] as const;
 
   return (
@@ -86,13 +87,8 @@ function RecentApplications({ applications }: { applications: RecentApplication[
         </table>
       </div>
       <div className="grid gap-3 p-3 lg:hidden">
-        {applications.map((application) => <ApplicationMobileCard key={application.id} application={{ ...application, userMatchPercentage: null }} />)}
+        {applications.map((application) => <ApplicationMobileCard key={application.id} application={application} />)}
       </div>
     </SectionCard>
   );
 }
-
-function ChartIcon() { return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 16V8m6 8V4m6 12v-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>; }
-function ProgressIcon() { return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3a7 7 0 1 1-6.3 10M10 3v7h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
-function MatchIcon() { return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
-function CloseIcon() { return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 6 8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>; }
