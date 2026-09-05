@@ -9,12 +9,14 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "import:legacy-applications": "tsx scripts/import-legacy-applications.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "latest",
     "dotenv": "^17.4.2",
     "drizzle-orm": "latest",
+    "googleapis": "^178.0.0",
     "next": "latest",
     "next-auth": "beta",
     "openai": "latest",
@@ -28,6 +30,7 @@
     "@types/react-dom": "latest",
     "drizzle-kit": "latest",
     "tailwindcss": "latest",
+    "tsx": "^4.23.13",
     "typescript": "latest"
   }
 }

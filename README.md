@@ -21,6 +21,8 @@ cp .env.example .env.local
 ```
 Configure `DATABASE_URL`, `AUTH_SECRET`, GitHub OAuth credentials, and `OPENAI_API_KEY`.
 
+Google Sheets mirror support requires `GOOGLE_SHEETS_SPREADSHEET_ID`, `GOOGLE_SHEETS_SHEET_NAME`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`. Share the target spreadsheet with the service account email using Editor permission. PostgreSQL remains the source of truth; the sheet is only a one-way mirror for new JobHolmes applications.
+
 GitHub OAuth local URLs:
 - Homepage: `http://localhost:3000`
 - Callback: `http://localhost:3000/api/auth/callback/github`
@@ -31,6 +33,12 @@ npm run db:generate
 npm run db:migrate
 ```
 For rapid alpha development you can use `npm run db:push`.
+
+Import the current legacy tracker once, after the target JobHolmes user already exists:
+```bash
+IMPORT_USER_EMAIL="you@example.com" npm run import:legacy-applications
+```
+The import skips existing applications with the same user, company, role, and applied date.
 
 Run:
 ```bash
