@@ -1,0 +1,4 @@
+import { eq, sql } from "drizzle-orm";
+import { db } from "@/db";
+import { applications, userProfiles } from "@/db/schema";
+export async function buildJobSearchContext(userId:string){const [profile]=await db.select().from(userProfiles).where(eq(userProfiles.userId,userId)).limit(1);const [stats]=await db.select({applications:sql<number>`count(*)::int`,screenings:sql<number>`count(*) filter (where ${applications.stage} in ('RECRUITER_SCREENING','HIRING_MANAGER','TECHNICAL','CHALLENGE','FINAL','OFFER'))::int`,technicals:sql<number>`count(*) filter (where ${applications.stage} in ('TECHNICAL','CHALLENGE','FINAL','OFFER'))::int`,offers:sql<number>`count(*) filter (where ${applications.outcome}='OFFER')::int`}).from(applications).where(eq(applications.userId,userId));return {profile:profile??null,funnel:stats};}

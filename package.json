@@ -1,0 +1,8 @@
+{
+  "name":"jobholmes",
+  "version":"0.1.0",
+  "private":true,
+  "scripts":{"dev":"next dev","build":"next build","start":"next start","db:generate":"drizzle-kit generate","db:migrate":"drizzle-kit migrate","db:push":"drizzle-kit push","db:studio":"drizzle-kit studio"},
+  "dependencies":{"drizzle-orm":"latest","@neondatabase/serverless":"latest","next":"latest","next-auth":"beta","openai":"latest","react":"latest","react-dom":"latest","zod":"latest"},
+  "devDependencies":{"@types/node":"latest","@types/react":"latest","@types/react-dom":"latest","drizzle-kit":"latest","tailwindcss":"latest","typescript":"latest"}
+}
