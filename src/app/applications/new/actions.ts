@@ -33,6 +33,8 @@ export async function createApplicationAction(
         company: application.company,
         role: application.role,
         errorName: error instanceof Error ? error.name : "UnknownError",
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
       });
     }
   } catch {
