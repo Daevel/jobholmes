@@ -1,11 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  createApplicationAction,
-  initialCreateApplicationFormState,
-  type CreateApplicationFormState,
-} from "@/app/applications/new/actions";
+import { createApplicationAction } from "@/app/applications/new/actions";
+import { initialCreateApplicationFormState, type CreateApplicationFormState } from "@/app/applications/new/form-state";
 
 const matchOptions = [
   { value: "A_STRONG", label: "Strong" },

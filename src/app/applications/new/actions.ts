@@ -1,20 +1,11 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createApplicationSchema, type CreateApplicationInput } from "@/lib/applications/schema";
+import { createApplicationSchema } from "@/lib/applications/schema";
 import { createApplicationForUser } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
 import { syncApplicationToGoogleSheet } from "@/lib/google/sheets";
-
-type CreateApplicationField = keyof CreateApplicationInput;
-
-export type CreateApplicationFormState = {
-  errors?: Partial<Record<CreateApplicationField, string[]>>;
-  formError?: string;
-  values?: Partial<Record<CreateApplicationField, string>>;
-};
-
-export const initialCreateApplicationFormState: CreateApplicationFormState = {};
+import { redirect } from "next/navigation";
+import { CreateApplicationFormState } from "./form-state";
 
 export async function createApplicationAction(
   _previousState: CreateApplicationFormState,
