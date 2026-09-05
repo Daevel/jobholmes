@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AppShell, ApplicationMobileCard, ButtonLink, EmptyState, MatchBadge, OutcomeBadge, PageHeader, SectionCard, StageBadge } from "@/components/application-ui";
+import { AiMatchBadge, AppShell, ApplicationMobileCard, ButtonLink, EmptyState, MatchBadge, OutcomeBadge, PageHeader, SectionCard, StageBadge } from "@/components/application-ui";
 import { formatDate, matchLabels, outcomeLabels, stageLabels } from "@/lib/applications/display";
 import { listApplicationsForUser } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
@@ -80,13 +80,14 @@ function ApplicationsTable({ applications }: { applications: Awaited<ReturnType<
         <table className="w-full table-fixed border-collapse text-left text-sm">
           <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
             <tr>
-              <th className="w-[29%] px-3 py-3 xl:px-4">Company</th>
-              <th className="w-[14%] px-3 py-3 xl:px-4">Country</th>
-              <th className="w-[13%] px-3 py-3 xl:px-4">Applied</th>
-              <th className="w-[14%] px-3 py-3 xl:px-4">Stage</th>
-              <th className="w-[11%] px-3 py-3 xl:px-4">Outcome</th>
-              <th className="w-[12%] px-3 py-3 xl:px-4">Match</th>
-              <th className="w-[7%] px-3 py-3 xl:px-4">Actions</th>
+              <th className="w-[24%] px-3 py-3">Company</th>
+              <th className="w-[12%] px-3 py-3">Country</th>
+              <th className="w-[12%] px-3 py-3">Applied</th>
+              <th className="w-[13%] px-3 py-3">Stage</th>
+              <th className="w-[11%] px-3 py-3">Outcome</th>
+              <th className="w-[12%] px-3 py-3">Your Match</th>
+              <th className="w-[10%] px-3 py-3">AI Match</th>
+              <th className="w-[6%] px-3 py-3">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -98,12 +99,13 @@ function ApplicationsTable({ applications }: { applications: Awaited<ReturnType<
                     <span className="mt-1 block truncate text-sm text-slate-500">{application.role}</span>
                   </Link>
                 </td>
-                <td className="truncate px-3 py-4 text-slate-500 xl:px-4">{application.country || "-"}</td>
-                <td className="whitespace-nowrap px-3 py-4 text-slate-500 xl:px-4">{formatDate(application.appliedAt)}</td>
-                <td className="px-3 py-4 xl:px-4"><StageBadge value={application.stage} /></td>
-                <td className="px-3 py-4 xl:px-4"><OutcomeBadge value={application.outcome} /></td>
-                <td className="px-3 py-4 xl:px-4"><div className="flex flex-wrap items-center gap-2"><MatchBadge value={application.userMatchClass} />{application.userMatchPercentage !== null ? <span className="text-xs font-medium text-slate-500">{application.userMatchPercentage}%</span> : null}</div></td>
-                <td className="px-3 py-4 xl:px-4"><Link className="text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" href={`/applications/${application.id}`}>View</Link></td>
+                <td className="truncate px-3 py-4 text-slate-500">{application.country || "-"}</td>
+                <td className="whitespace-nowrap px-3 py-4 text-slate-500">{formatDate(application.appliedAt)}</td>
+                <td className="px-3 py-4"><StageBadge value={application.stage} /></td>
+                <td className="px-3 py-4"><OutcomeBadge value={application.outcome} /></td>
+                <td className="px-3 py-4"><div className="flex flex-wrap items-center gap-2"><MatchBadge value={application.userMatchClass} />{application.userMatchPercentage !== null ? <span className="text-xs font-medium text-slate-500">{application.userMatchPercentage}%</span> : null}</div></td>
+                <td className="px-3 py-4"><AiMatchBadge percentage={application.aiMatchPercentage} value={application.aiMatchClass} /></td>
+                <td className="px-3 py-4"><Link className="text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" href={`/applications/${application.id}`}>View</Link></td>
               </tr>
             ))}
           </tbody>

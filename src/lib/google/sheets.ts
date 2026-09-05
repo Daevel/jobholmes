@@ -34,6 +34,7 @@ const stageLabels = {
 export async function syncApplicationToGoogleSheet(application: Application) {
   const config = getGoogleSheetsConfig();
   const sheets = getGoogleSheetsClient(config);
+  await ensureExtendedHeaders(sheets, config);
   const rows = await getExistingRows(sheets, config);
 
   if (hasEquivalentApplication(rows, application)) {
@@ -46,7 +47,7 @@ export async function syncApplicationToGoogleSheet(application: Application) {
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!A${sheetRow}:X${sheetRow}`,
+    range: `${config.sheetName}!A${sheetRow}:AB${sheetRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [toSheetRow(application, sheetId)],
@@ -59,6 +60,7 @@ export async function syncApplicationToGoogleSheet(application: Application) {
 export async function syncUpdatedApplicationToGoogleSheet(application: Application, previousApplication: Application) {
   const config = getGoogleSheetsConfig();
   const sheets = getGoogleSheetsClient(config);
+  await ensureExtendedHeaders(sheets, config);
   const rows = await getExistingRows(sheets, config);
   const foundRow = findEquivalentApplicationRow(rows, previousApplication) ?? findEquivalentApplicationRow(rows, application);
 
@@ -70,7 +72,7 @@ export async function syncUpdatedApplicationToGoogleSheet(application: Applicati
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!A${foundRow.sheetRow}:X${foundRow.sheetRow}`,
+    range: `${config.sheetName}!A${foundRow.sheetRow}:AB${foundRow.sheetRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [toSheetRow(application, sheetId)],
@@ -106,7 +108,7 @@ function getGoogleSheetsClient(config: ReturnType<typeof getGoogleSheetsConfig>)
 async function getExistingRows(sheets: ReturnType<typeof getGoogleSheetsClient>, config: ReturnType<typeof getGoogleSheetsConfig>) {
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!A:X`,
+    range: `${config.sheetName}!A:AB`,
   });
 
   return response.data.values ?? [];
@@ -188,7 +190,24 @@ function toSheetRow(application: Application, sheetId: number) {
     application.rejectionReason ?? "",
     application.requirementsAndGaps ?? "",
     application.notes ?? "",
+    truncateForSheet(application.jdText ?? ""),
+    application.aiMatchClass ? matchLabels[application.aiMatchClass] : "",
+    application.aiMatchPercentage === null ? "" : `${application.aiMatchPercentage}%`,
+    application.aiMatchConfidence === null ? "" : `${application.aiMatchConfidence}%`,
   ];
+}
+
+async function ensureExtendedHeaders(sheets: ReturnType<typeof getGoogleSheetsClient>, config: ReturnType<typeof getGoogleSheetsConfig>) {
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: config.spreadsheetId,
+    range: `${config.sheetName}!Y1:AB1`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [["JD", "AI Match", "AI Match %", "AI Match Confidence"]] },
+  });
+}
+
+function truncateForSheet(value: string) {
+  return value.length > 45000 ? `${value.slice(0, 45000)}\n[Truncated in Google Sheet; full JD is stored in JobHolmes.]` : value;
 }
 
 function getDaysToResponse(application: Application) {
