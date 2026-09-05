@@ -2,6 +2,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { applications } from "@/db/schema";
 import type { CreateApplicationInput, UpdateApplicationInput } from "@/lib/applications/schema";
+import { getCvForUser } from "@/lib/cvs/service";
 export function listApplicationsForUser(userId:string){return db.select().from(applications).where(eq(applications.userId,userId)).orderBy(desc(applications.appliedAt));}
 export async function getApplicationForUser(userId:string,applicationId:string){const [row]=await db.select().from(applications).where(and(eq(applications.userId,userId),eq(applications.id,applicationId))).limit(1);return row??null;}
 
@@ -23,6 +24,9 @@ export type RecentApplication = Pick<
   | "role"
   | "country"
   | "userMatchClass"
+  | "userMatchPercentage"
+  | "aiMatchClass"
+  | "aiMatchPercentage"
   | "outcome"
   | "stage"
 >;
@@ -53,6 +57,9 @@ export async function getRecentApplicationsForUser(userId: string, limit = 5): P
       role: applications.role,
       country: applications.country,
       userMatchClass: applications.userMatchClass,
+      userMatchPercentage: applications.userMatchPercentage,
+      aiMatchClass: applications.aiMatchClass,
+      aiMatchPercentage: applications.aiMatchPercentage,
       outcome: applications.outcome,
       stage: applications.stage,
     })
@@ -63,6 +70,9 @@ export async function getRecentApplicationsForUser(userId: string, limit = 5): P
 }
 
 export async function createApplicationForUser(userId: string, input: CreateApplicationInput) {
+  const selectedCv = input.cvDocumentId ? await getCvForUser(userId, input.cvDocumentId) : null;
+  if (input.cvDocumentId && !selectedCv) throw new Error("CV_NOT_FOUND");
+
   const [created] = await db
     .insert(applications)
     .values({
@@ -76,7 +86,9 @@ export async function createApplicationForUser(userId: string, input: CreateAppl
       workMode: input.workMode ?? null,
       source: input.source ?? null,
       vacancyUrl: input.vacancyUrl ?? null,
-      cvVersion: input.cvVersion ?? null,
+      cvDocumentId: selectedCv?.id ?? null,
+      cvVersion: selectedCv?.name ?? null,
+      jdText: input.jdText ?? null,
       userMatchClass: input.userMatchClass ?? null,
       userMatchPercentage: input.userMatchPercentage ?? null,
       workAuthorization: input.workAuthorization ?? null,
@@ -84,8 +96,8 @@ export async function createApplicationForUser(userId: string, input: CreateAppl
       salaryMin: input.salaryMin ?? null,
       salaryMax: input.salaryMax ?? null,
       currency: input.currency ?? null,
-      outcome: input.outcome,
-      stage: input.stage,
+      outcome: "IN_PROGRESS",
+      stage: "APPLICATION",
       requirementsAndGaps: input.requirementsAndGaps ?? null,
       notes: input.notes ?? null,
     })
@@ -99,6 +111,13 @@ export async function updateApplicationForUser(userId: string, applicationId: st
 
   if (!previous) return null;
 
+  const selectedCv = input.cvDocumentId ? await getCvForUser(userId, input.cvDocumentId) : null;
+  if (input.cvDocumentId && !selectedCv) throw new Error("CV_NOT_FOUND");
+
+  const normalizedJdText = input.jdText ?? null;
+  const nextCvDocumentId = selectedCv?.id ?? null;
+  const shouldInvalidateAiMatch = previous.jdText !== normalizedJdText || previous.cvDocumentId !== nextCvDocumentId;
+
   const [updated] = await db
     .update(applications)
     .set({
@@ -111,9 +130,14 @@ export async function updateApplicationForUser(userId: string, applicationId: st
       workMode: input.workMode ?? null,
       source: input.source ?? null,
       vacancyUrl: input.vacancyUrl ?? null,
-      cvVersion: input.cvVersion ?? null,
+      cvDocumentId: nextCvDocumentId,
+      cvVersion: selectedCv?.name ?? (input.cvDocumentId ? null : previous.cvVersion),
+      jdText: normalizedJdText,
       userMatchClass: input.userMatchClass ?? null,
       userMatchPercentage: input.userMatchPercentage ?? null,
+      aiMatchClass: shouldInvalidateAiMatch ? null : previous.aiMatchClass,
+      aiMatchPercentage: shouldInvalidateAiMatch ? null : previous.aiMatchPercentage,
+      aiMatchConfidence: shouldInvalidateAiMatch ? null : previous.aiMatchConfidence,
       workAuthorization: input.workAuthorization ?? null,
       sponsorshipRequired: input.sponsorshipRequired,
       salaryMin: input.salaryMin ?? null,
@@ -125,6 +149,7 @@ export async function updateApplicationForUser(userId: string, applicationId: st
       rejectionReason: input.rejectionReason ?? null,
       requirementsAndGaps: input.requirementsAndGaps ?? null,
       notes: input.notes ?? null,
+      jdVerifiedAt: shouldInvalidateAiMatch ? null : previous.jdVerifiedAt,
       updatedAt: new Date(),
     })
     .where(and(eq(applications.userId, userId), eq(applications.id, applicationId)))

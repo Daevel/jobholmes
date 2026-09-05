@@ -30,13 +30,15 @@ const stageOptions = [
 ] as const;
 
 type FieldName = NonNullable<UpdateApplicationFormState["values"]> extends Partial<Record<infer Key, string>> ? Key : never;
+type CvOption = { id: string; name: string };
+type EditDefaults = NonNullable<UpdateApplicationFormState["values"]> & { legacyCvVersion?: string };
 
-export function EditApplicationForm({ applicationId, defaults }: { applicationId: string; defaults: NonNullable<UpdateApplicationFormState["values"]> }) {
+export function EditApplicationForm({ applicationId, defaults, cvs }: { applicationId: string; defaults: EditDefaults; cvs: CvOption[] }) {
   const [state, formAction, pending] = useActionState(updateApplicationAction.bind(null, applicationId), initialUpdateApplicationFormState);
   const values = state.values ?? defaults;
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-5" id="application-form">
       {state.formError ? <p className={formStyles.formError}>{state.formError}</p> : null}
 
       <section className={formStyles.section}>
@@ -52,7 +54,16 @@ export function EditApplicationForm({ applicationId, defaults }: { applicationId
           <Field label="Vacancy URL" name="vacancyUrl" state={state} type="url" values={values} />
           <Field label="Role category" name="roleCategory" state={state} values={values} />
           <Field label="Seniority" name="seniority" state={state} values={values} />
-          <Field label="CV version" name="cvVersion" state={state} values={values} />
+          <CvSelect cvs={cvs} values={values} state={state} />
+        </div>
+      </section>
+
+      <section className={formStyles.section}>
+        <h2 className={formStyles.sectionTitle}>Job description</h2>
+        <p className={formStyles.sectionDescription}>Add or correct the job description used for AI Match. Changing the JD requires re-analysis.</p>
+        <div className="mt-5">
+          <TextareaField label="Job description" name="jdText" state={state} values={values} />
+          <EnrichmentButton />
         </div>
       </section>
 
@@ -69,10 +80,7 @@ export function EditApplicationForm({ applicationId, defaults }: { applicationId
         <h2 className={formStyles.sectionTitle}>Employment details</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <Field label="Work authorization" name="workAuthorization" state={state} values={values} />
-          <label className="mt-7 flex h-11 items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700">
-            <input className="h-4 w-4 accent-indigo-600" defaultChecked={values.sponsorshipRequired === "on" || values.sponsorshipRequired === "true"} name="sponsorshipRequired" type="checkbox" />
-            Sponsorship required
-          </label>
+          <SponsorshipField state={state} values={values} />
           <Field label="Salary min" name="salaryMin" state={state} type="number" values={values} />
           <Field label="Salary max" name="salaryMax" state={state} type="number" values={values} />
           <Field label="Currency" name="currency" state={state} values={values} />
@@ -102,6 +110,48 @@ export function EditApplicationForm({ applicationId, defaults }: { applicationId
       </div>
     </form>
   );
+}
+
+function CvSelect({ cvs, state, values }: { cvs: CvOption[]; state: UpdateApplicationFormState; values: EditDefaults }) {
+  const error = getError(state, "cvDocumentId");
+
+  return (
+    <label className={formStyles.label}>
+      CV used
+      <select className={formStyles.input} defaultValue={values.cvDocumentId ?? ""} name="cvDocumentId">
+        <option value="">No CV selected</option>
+        {cvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
+      </select>
+      {values.legacyCvVersion ? <span className="mt-2 block text-xs text-slate-500">Legacy CV value: {values.legacyCvVersion}</span> : null}
+      {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">No CVs uploaded yet. <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">Upload a CV</a> to enable AI Match.</span> : null}
+      {error ? <span className={formStyles.error}>{error}</span> : null}
+    </label>
+  );
+}
+
+function SponsorshipField({ state, values }: { state: UpdateApplicationFormState; values: EditDefaults }) {
+  const error = getError(state, "sponsorshipRequired");
+  return <label className={formStyles.label}>Sponsorship required<select className={formStyles.input} defaultValue={values.sponsorshipRequired ?? "unknown"} name="sponsorshipRequired"><option value="unknown">Unknown</option><option value="false">No</option><option value="true">Yes</option></select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
+}
+
+function EnrichmentButton() {
+  async function extractDetails() {
+    const form = document.getElementById("application-form");
+    if (!(form instanceof HTMLFormElement)) return;
+    const formData = new FormData(form);
+    const response = await fetch("/api/ai/application-enrichment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(formData.entries())) });
+    if (!response.ok) return;
+    const data = await response.json() as { suggestions: Record<string, string | number | null> };
+    for (const [name, value] of Object.entries(data.suggestions)) {
+      if (value === null || value === undefined || value === "") continue;
+      const field = form.elements.namedItem(name);
+      if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+        if (field.value.trim() === "") field.value = String(value);
+      }
+    }
+  }
+
+  return <button className="mt-3 text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" onClick={extractDetails} type="button">Extract details from JD</button>;
 }
 
 function Field({ state, values, label, name, ...props }: { state: UpdateApplicationFormState; values: NonNullable<UpdateApplicationFormState["values"]>; label: string; name: FieldName } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "defaultValue" | "name">) {

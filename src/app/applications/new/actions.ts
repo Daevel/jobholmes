@@ -13,6 +13,7 @@ export async function createApplicationAction(
 ): Promise<CreateApplicationFormState> {
   const rawValues = Object.fromEntries(formData.entries());
   const parsed = createApplicationSchema.safeParse(rawValues);
+  let applicationId: string | null = null;
 
   if (!parsed.success) {
     return {
@@ -24,6 +25,7 @@ export async function createApplicationAction(
   try {
     const user = await requireCurrentUser();
     const application = await createApplicationForUser(user.id, parsed.data);
+    applicationId = application.id;
 
     try {
       await syncApplicationToGoogleSheet(application);
@@ -42,7 +44,7 @@ export async function createApplicationAction(
     };
   }
 
-  redirect("/dashboard");
+  redirect(applicationId ? `/applications/${applicationId}` : "/dashboard");
 }
 
 function getStringValues(values: Record<string, FormDataEntryValue>): CreateApplicationFormState["values"] {

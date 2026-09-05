@@ -11,31 +11,14 @@ const matchOptions = [
   { value: "C_LONG_SHOT", label: "Long shot" },
 ] as const;
 
-const outcomeOptions = [
-  { value: "PENDING", label: "Pending" },
-  { value: "IN_PROGRESS", label: "In progress" },
-  { value: "REJECTED", label: "Rejected" },
-  { value: "WITHDRAWN", label: "Withdrawn" },
-  { value: "OFFER", label: "Offer" },
-] as const;
-
-const stageOptions = [
-  { value: "APPLICATION", label: "Application" },
-  { value: "RECRUITER_SCREENING", label: "Recruiter screening" },
-  { value: "HIRING_MANAGER", label: "Hiring manager" },
-  { value: "TECHNICAL", label: "Technical" },
-  { value: "CHALLENGE", label: "Challenge" },
-  { value: "FINAL", label: "Final" },
-  { value: "OFFER", label: "Offer" },
-] as const;
-
 type FieldName = NonNullable<CreateApplicationFormState["values"]> extends Partial<Record<infer Key, string>> ? Key : never;
+type CvOption = { id: string; name: string };
 
-export function NewApplicationForm({ today }: { today: string }) {
+export function NewApplicationForm({ today, cvs }: { today: string; cvs: CvOption[] }) {
   const [state, formAction, pending] = useActionState(createApplicationAction, initialCreateApplicationFormState);
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-5" id="application-form">
       {state.formError ? <p className={formStyles.formError}>{state.formError}</p> : null}
 
       <section className={formStyles.section}>
@@ -51,7 +34,16 @@ export function NewApplicationForm({ today }: { today: string }) {
           <Field state={state} label="Vacancy URL" name="vacancyUrl" placeholder="https://example.com/jobs/123" type="url" />
           <Field state={state} label="Role category" name="roleCategory" placeholder="Frontend" />
           <Field state={state} label="Seniority" name="seniority" placeholder="Senior" />
-          <Field state={state} label="CV version" name="cvVersion" placeholder="frontend-2026-v1" />
+          <CvSelect cvs={cvs} state={state} />
+        </div>
+      </section>
+
+      <section className={formStyles.section}>
+        <h2 className={formStyles.sectionTitle}>Job description</h2>
+        <p className={formStyles.sectionDescription}>Paste the job description so JobHolmes can extract role details and compare the position against your selected CV.</p>
+        <div className="mt-5">
+          <TextareaField label="Job description" name="jdText" placeholder="Paste the full job description here..." state={state} />
+          <EnrichmentButton />
         </div>
       </section>
 
@@ -68,26 +60,10 @@ export function NewApplicationForm({ today }: { today: string }) {
         <h2 className={formStyles.sectionTitle}>Employment details</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <Field state={state} label="Work authorization" name="workAuthorization" placeholder="EU citizen" />
-          <label className="mt-7 flex h-11 items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700">
-            <input
-              className="h-4 w-4 accent-indigo-600"
-              defaultChecked={state.values?.sponsorshipRequired === "on" || state.values?.sponsorshipRequired === "true"}
-              name="sponsorshipRequired"
-              type="checkbox"
-            />
-            Sponsorship required
-          </label>
+          <SponsorshipField state={state} />
           <Field state={state} label="Salary min" name="salaryMin" placeholder="70000" type="number" />
           <Field state={state} label="Salary max" name="salaryMax" placeholder="90000" type="number" />
           <Field state={state} label="Currency" name="currency" placeholder="EUR" />
-        </div>
-      </section>
-
-      <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Application status</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <SelectField defaultValue="PENDING" label="Outcome" name="outcome" options={outcomeOptions} state={state} />
-          <SelectField defaultValue="APPLICATION" label="Stage" name="stage" options={stageOptions} state={state} />
         </div>
       </section>
 
@@ -106,6 +82,63 @@ export function NewApplicationForm({ today }: { today: string }) {
       </div>
     </form>
   );
+}
+
+function CvSelect({ cvs, state }: { cvs: CvOption[]; state: CreateApplicationFormState }) {
+  const error = getError(state, "cvDocumentId");
+
+  return (
+    <label className={formStyles.label}>
+      CV used
+      <select className={formStyles.input} defaultValue={state.values?.cvDocumentId ?? ""} name="cvDocumentId">
+        <option value="">No CV selected</option>
+        {cvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
+      </select>
+      {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">No CVs uploaded yet. <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">Upload a CV</a> to enable AI Match.</span> : null}
+      {error ? <span className={formStyles.error}>{error}</span> : null}
+    </label>
+  );
+}
+
+function SponsorshipField({ state }: { state: CreateApplicationFormState }) {
+  const error = getError(state, "sponsorshipRequired");
+
+  return (
+    <label className={formStyles.label}>
+      Sponsorship required
+      <select className={formStyles.input} defaultValue={state.values?.sponsorshipRequired ?? "unknown"} name="sponsorshipRequired">
+        <option value="unknown">Unknown</option>
+        <option value="false">No</option>
+        <option value="true">Yes</option>
+      </select>
+      {error ? <span className={formStyles.error}>{error}</span> : null}
+    </label>
+  );
+}
+
+function EnrichmentButton() {
+  async function extractDetails() {
+    const form = document.getElementById("application-form");
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const formData = new FormData(form);
+    const response = await fetch("/api/ai/application-enrichment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(formData.entries())),
+    });
+    if (!response.ok) return;
+    const data = await response.json() as { suggestions: Record<string, string | number | null> };
+    for (const [name, value] of Object.entries(data.suggestions)) {
+      if (value === null || value === undefined || value === "") continue;
+      const field = form.elements.namedItem(name);
+      if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+        if (field.value.trim() === "") field.value = String(value);
+      }
+    }
+  }
+
+  return <button className="mt-3 text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" onClick={extractDetails} type="button">Extract details from JD</button>;
 }
 
 function Field({

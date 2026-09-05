@@ -6,9 +6,20 @@ const applicationStages = ["APPLICATION", "RECRUITER_SCREENING", "HIRING_MANAGER
 
 const emptyToUndefined = (value: unknown) => (typeof value === "string" && value.trim() === "" ? undefined : value);
 const optionalTrimmedString = (max: number) => z.preprocess(emptyToUndefined, z.string().trim().max(max).optional());
+const optionalText = z.preprocess(emptyToUndefined, z.string().trim().max(50000).optional());
 const optionalPositiveInteger = z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional());
+const optionalPercentage = z.preprocess(emptyToUndefined, z.coerce.number().int("Match percentage must be an integer").min(0).max(100).optional());
+const optionalUuid = z.preprocess(emptyToUndefined, z.string().uuid().optional());
 
-export const createApplicationSchema = z
+const sponsorshipRequired = z.preprocess(
+  emptyToUndefined,
+  z.enum(["unknown", "false", "true"]).optional().transform((value) => {
+    if (!value || value === "unknown") return null;
+    return value === "true";
+  }),
+);
+
+const baseApplicationFields = z
   .object({
     appliedAt: z.coerce.date({ error: "Applied date is required" }),
     company: z.string().trim().min(1, "Company is required").max(255),
@@ -19,33 +30,32 @@ export const createApplicationSchema = z
     workMode: optionalTrimmedString(40),
     source: optionalTrimmedString(80),
     vacancyUrl: z.preprocess(emptyToUndefined, z.url("Enter a valid vacancy URL").optional()),
-    cvVersion: optionalTrimmedString(120),
+    cvDocumentId: optionalUuid,
+    jdText: optionalText,
     userMatchClass: z.preprocess(emptyToUndefined, z.enum(matchClasses).optional()),
-    userMatchPercentage: z.preprocess(
-      emptyToUndefined,
-      z.coerce.number().int("Match percentage must be an integer").min(0).max(100).optional(),
-    ),
+    userMatchPercentage: optionalPercentage,
     workAuthorization: optionalTrimmedString(120),
-    sponsorshipRequired: z.preprocess((value) => value === "on" || value === "true" || value === true, z.boolean()),
+    sponsorshipRequired,
     salaryMin: optionalPositiveInteger,
     salaryMax: optionalPositiveInteger,
     currency: optionalTrimmedString(10),
-    outcome: z.enum(applicationOutcomes).default("PENDING"),
-    stage: z.enum(applicationStages).default("APPLICATION"),
-    requirementsAndGaps: optionalTrimmedString(10000),
-    notes: optionalTrimmedString(10000),
+    requirementsAndGaps: optionalText,
+    notes: optionalText,
   })
   .refine((input) => !input.salaryMin || !input.salaryMax || input.salaryMax >= input.salaryMin, {
     message: "Salary max must not be lower than salary min",
     path: ["salaryMax"],
   });
 
+export const createApplicationSchema = baseApplicationFields;
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
 
-export const updateApplicationSchema = createApplicationSchema
+export const updateApplicationSchema = baseApplicationFields
   .extend({
+    outcome: z.enum(applicationOutcomes),
+    stage: z.enum(applicationStages),
     responseAt: z.preprocess(emptyToUndefined, z.coerce.date().optional()),
-    rejectionReason: optionalTrimmedString(10000),
+    rejectionReason: optionalText,
   })
   .transform((input) => ({
     ...input,
