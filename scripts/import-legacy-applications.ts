@@ -1,12 +1,28 @@
 import "dotenv/config";
 
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "../src/db";
 import { applications, users } from "../src/db/schema";
-import { createApplicationSchema, type CreateApplicationInput } from "../src/lib/applications/schema";
+import { createApplicationSchema } from "../src/lib/applications/schema";
+
+const applicationOutcomes = ["PENDING", "IN_PROGRESS", "REJECTED", "WITHDRAWN", "OFFER"] as const;
+const applicationStages = ["APPLICATION", "RECRUITER_SCREENING", "HIRING_MANAGER", "TECHNICAL", "CHALLENGE", "FINAL", "OFFER"] as const;
+
+const emptyToUndefined = (value: unknown) => (typeof value === "string" && value.trim() === "" ? undefined : value);
+
+const legacyOnlyFieldsSchema = z.object({
+  cvVersion: z.preprocess(emptyToUndefined, z.string().trim().max(120).optional()),
+  outcome: z.enum(applicationOutcomes),
+  stage: z.enum(applicationStages),
+});
+
+const legacyApplicationInputSchema = createApplicationSchema.and(legacyOnlyFieldsSchema);
+
+type LegacyApplicationInput = z.infer<typeof legacyApplicationInputSchema>;
 
 type LegacyApplication = {
-  input: CreateApplicationInput;
+  input: LegacyApplicationInput;
   responseAt?: Date;
   rejectionReason?: string;
 };
@@ -235,7 +251,7 @@ async function main() {
 }
 
 function parseLegacyApplication(input: Record<string, unknown>) {
-  return createApplicationSchema.parse(input);
+  return legacyApplicationInputSchema.parse(input);
 }
 
 function parseDate(value: string) {
