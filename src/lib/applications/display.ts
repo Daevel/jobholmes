@@ -5,7 +5,7 @@ type Application = typeof applications.$inferSelect;
 export const matchLabels = {
   A_STRONG: "Strong",
   B_STRETCH: "Stretch",
-  C_LONG_SHOT: "Long-shot",
+  C_LONG_SHOT: "Long shot",
 } as const;
 
 export const outcomeLabels = {
