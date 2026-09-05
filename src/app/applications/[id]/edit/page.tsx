@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { AppHeader, AppShell, PageHeading, SecondaryLink } from "@/components/application-ui";
+import { AppShell, ButtonLink, PageHeader } from "@/components/application-ui";
 import { EditApplicationForm } from "@/app/applications/[id]/edit/form";
 import { formatDateInput } from "@/lib/applications/display";
 import { getApplicationForUser } from "@/lib/applications/service";
@@ -39,14 +39,8 @@ export default async function EditApplicationPage({ params }: { params: Promise<
   };
 
   return (
-    <AppShell>
-      <AppHeader accountLabel={user.name || user.email} />
-      <PageHeading
-        action={<SecondaryLink href={`/applications/${application.id}`}>Back to application</SecondaryLink>}
-        eyebrow="Edit application"
-        subtitle="Update funnel status, role details, compensation, and notes."
-        title={`${application.company} / ${application.role}`}
-      />
+    <AppShell accountLabel={user.name || user.email} currentPath="/applications">
+      <PageHeader action={<ButtonLink href={`/applications/${application.id}`} variant="secondary">Cancel</ButtonLink>} eyebrow="Edit application" subtitle={`${application.company} • ${application.role}`} title="Edit application" />
       <EditApplicationForm applicationId={application.id} defaults={defaults} />
     </AppShell>
   );
