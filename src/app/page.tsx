@@ -1,2 +1,49 @@
+import Link from "next/link";
 import { auth, signIn, signOut } from "@/auth";
-export default async function Home(){const session=await auth();return <main className="mx-auto min-h-screen max-w-5xl px-6 py-16"><p className="mb-3 text-sm uppercase tracking-[0.25em] text-zinc-500">Alpha 0.1</p><h1 className="text-5xl font-semibold tracking-tight">JobHolmes</h1><p className="mt-4 max-w-2xl text-lg text-zinc-400">Understand why your job search is not converting.</p><div className="mt-10 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">{session?.user?<><p>Signed in as <strong>{session.user.email}</strong></p><form className="mt-5" action={async()=>{"use server";await signOut();}}><button className="rounded-lg border border-zinc-700 px-4 py-2">Sign out</button></form></>:<><p className="text-zinc-400">Sign in to load the same JobHolmes account from every device.</p><form className="mt-5" action={async()=>{"use server";await signIn("github");}}><button className="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-950">Sign in with GitHub</button></form></>}</div></main>}
+
+export default async function Home() {
+  const session = await auth();
+
+  return (
+    <main className="mx-auto min-h-screen max-w-5xl px-6 py-16">
+      <p className="mb-3 text-sm uppercase tracking-[0.25em] text-zinc-500">Alpha 0.1</p>
+      <h1 className="text-5xl font-semibold tracking-tight">JobHolmes</h1>
+      <p className="mt-4 max-w-2xl text-lg text-zinc-400">Understand why your job search is not converting.</p>
+      <div className="mt-10 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
+        {session?.user ? (
+          <>
+            <p>
+              Signed in as <strong>{session.user.email}</strong>
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Link className="rounded-lg bg-zinc-100 px-4 py-2 text-center font-medium text-zinc-950" href="/dashboard">
+                Go to dashboard
+              </Link>
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut();
+                }}
+              >
+                <button className="w-full rounded-lg border border-zinc-700 px-4 py-2 sm:w-auto">Sign out</button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-zinc-400">Sign in to load the same JobHolmes account from every device.</p>
+            <form
+              className="mt-5"
+              action={async () => {
+                "use server";
+                await signIn("github");
+              }}
+            >
+              <button className="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-950">Sign in with GitHub</button>
+            </form>
+          </>
+        )}
+      </div>
+    </main>
+  );
+}
