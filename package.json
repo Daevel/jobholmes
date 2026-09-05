@@ -14,12 +14,15 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "latest",
+    "@vercel/blob": "^2.8.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "latest",
     "googleapis": "^178.0.0",
+    "lucide-react": "^1.41.0",
     "next": "latest",
     "next-auth": "beta",
     "openai": "latest",
+    "pdf-parse": "^2.4.5",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest"

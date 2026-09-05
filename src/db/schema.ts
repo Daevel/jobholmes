@@ -1,4 +1,4 @@
-import { boolean, integer, numeric, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, numeric, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const matchClassEnum = pgEnum("match_class", ["A_STRONG","B_STRETCH","C_LONG_SHOT"]);
 export const applicationOutcomeEnum = pgEnum("application_outcome", ["PENDING","IN_PROGRESS","REJECTED","WITHDRAWN","OFFER"]);
@@ -29,6 +29,20 @@ export const userProfiles = pgTable("user_profiles", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const cvDocuments = pgTable("cv_documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  originalFileName: varchar("original_file_name", { length: 255 }).notNull(),
+  storagePath: text("storage_path").notNull(),
+  blobUrl: text("blob_url").notNull(),
+  mimeType: varchar("mime_type", { length: 120 }).notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  extractedText: text("extracted_text"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index("cv_documents_user_id_idx").on(table.userId)]);
+
 export const applications = pgTable("applications", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -42,6 +56,8 @@ export const applications = pgTable("applications", {
   source: varchar("source", { length: 80 }),
   vacancyUrl: text("vacancy_url"),
   cvVersion: varchar("cv_version", { length: 120 }),
+  cvDocumentId: uuid("cv_document_id").references(() => cvDocuments.id, { onDelete: "set null" }),
+  jdText: text("jd_text"),
   userMatchClass: matchClassEnum("user_match_class"),
   userMatchPercentage: integer("user_match_percentage"),
   aiMatchClass: matchClassEnum("ai_match_class"),
