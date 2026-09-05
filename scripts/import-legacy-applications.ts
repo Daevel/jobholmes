@@ -31,6 +31,18 @@ const legacyApplications: LegacyApplication[] = [
       stage: "APPLICATION",
     }),
     responseAt: parseDate("2026-09-03"),
+    rejectionReason: `Hi Luigi,
+
+ Thank you for your interest in Klarna and for applying to the Senior Fullstack Engineer - Javascript position. After careful consideration, we have decided to move forward with other candidates for this position. 
+
+ We encourage you to explore other positions with us that may align with your skills and career goals. New opportunities are posted regularly on our careers page and we welcome you to consider applying for future openings.
+
+ We sincerely appreciate your interest in joining our team and wish you success in your ongoing professional and personal endeavors.
+
+ Best regards,
+
+ Talent Acquisition
+ Klarna Bank AB (publ)`,
   },
   {
     input: parseLegacyApplication({
@@ -73,6 +85,19 @@ const legacyApplications: LegacyApplication[] = [
       stage: "APPLICATION",
     }),
     responseAt: parseDate("2026-09-02"),
+    rejectionReason: `Hi Luigi,
+  
+ We've decided not to move forward with your application for this role, as other candidates were a closer match for what the team needs right now.
+
+ We know job hunting is hard at the best of times and right now it's harder than most. So much of it has become automated, with applications disappearing into a system that no person ever sees. We know how draining that is, and it's part of why decisions like this are made by people here, not by AI.
+
+ Given the amount of interest we receive, we're not able to give individual feedback, and we're sorry we can't say more. These decisions are rarely about any single shortcoming, and a "no" here reflects the strength and depth of the field rather than a judgement on your career.
+
+ Whilst we know this isn't the answer you were hoping for, the door stays open. If another role on our careers page looks right, we'd welcome your application.
+
+ Best of luck with the search.
+  
+ Primer Talent Team`,
   },
   {
     input: parseLegacyApplication({
