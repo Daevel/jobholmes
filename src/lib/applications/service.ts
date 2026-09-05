@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { applications } from "@/db/schema";
+import type { CreateApplicationInput } from "@/lib/applications/schema";
 export function listApplicationsForUser(userId:string){return db.select().from(applications).where(eq(applications.userId,userId)).orderBy(desc(applications.appliedAt));}
 export async function getApplicationForUser(userId:string,applicationId:string){const [row]=await db.select().from(applications).where(and(eq(applications.userId,userId),eq(applications.id,applicationId))).limit(1);return row??null;}
 
@@ -59,4 +60,36 @@ export async function getRecentApplicationsForUser(userId: string, limit = 5): P
     .where(eq(applications.userId, userId))
     .orderBy(desc(applications.appliedAt))
     .limit(limit);
+}
+
+export async function createApplicationForUser(userId: string, input: CreateApplicationInput) {
+  const [created] = await db
+    .insert(applications)
+    .values({
+      userId,
+      appliedAt: input.appliedAt,
+      company: input.company,
+      role: input.role,
+      roleCategory: input.roleCategory ?? null,
+      seniority: input.seniority ?? null,
+      country: input.country ?? null,
+      workMode: input.workMode ?? null,
+      source: input.source ?? null,
+      vacancyUrl: input.vacancyUrl ?? null,
+      cvVersion: input.cvVersion ?? null,
+      userMatchClass: input.userMatchClass ?? null,
+      userMatchPercentage: input.userMatchPercentage ?? null,
+      workAuthorization: input.workAuthorization ?? null,
+      sponsorshipRequired: input.sponsorshipRequired,
+      salaryMin: input.salaryMin ?? null,
+      salaryMax: input.salaryMax ?? null,
+      currency: input.currency ?? null,
+      outcome: input.outcome,
+      stage: input.stage,
+      requirementsAndGaps: input.requirementsAndGaps ?? null,
+      notes: input.notes ?? null,
+    })
+    .returning();
+
+  return created;
 }

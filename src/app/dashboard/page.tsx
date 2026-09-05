@@ -65,16 +65,21 @@ export default async function DashboardPage() {
             </div>
             <p className="mt-2 text-sm text-zinc-500">Signed in as {user.email}</p>
           </div>
-          <form
-            action={async () => {
-              "use server";
-              await signOut();
-            }}
-          >
-            <button className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900">
-              Sign out
-            </button>
-          </form>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link className="rounded-lg bg-zinc-100 px-4 py-2 text-center text-sm font-semibold text-zinc-950 transition hover:bg-white" href="/applications/new">
+              Add application
+            </Link>
+            <form
+              action={async () => {
+                "use server";
+                await signOut();
+              }}
+            >
+              <button className="w-full rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900 sm:w-auto">
+                Sign out
+              </button>
+            </form>
+          </div>
         </header>
 
         <section>
@@ -100,10 +105,9 @@ export default async function DashboardPage() {
             <p className="mx-auto mt-3 max-w-xl text-zinc-400">
               Start tracking your job search to understand where your funnel converts.
             </p>
-            {/* TODO: link this to the application creation flow once it exists. */}
-            <button className="mt-6 rounded-lg bg-zinc-100 px-5 py-2.5 text-sm font-semibold text-zinc-950 opacity-70" type="button">
+            <Link className="mt-6 inline-flex rounded-lg bg-zinc-100 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-white" href="/applications/new">
               Add your first application
-            </button>
+            </Link>
           </section>
         ) : (
           <section className="rounded-3xl border border-zinc-800 bg-zinc-900/45 p-4 sm:p-6">
