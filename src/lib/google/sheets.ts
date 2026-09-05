@@ -40,8 +40,8 @@ export async function syncApplicationToGoogleSheet(application: Application) {
     return { status: "skipped" as const };
   }
 
-  const actualRows = getActualApplicationRows(rows);
-  const sheetId = getNextSheetId(actualRows);
+  const contiguousApplicationRows = getContiguousApplicationRows(rows);
+  const sheetId = getNextSheetId(contiguousApplicationRows);
   const sheetRow = getFirstFreeApplicationRow(rows);
 
   await sheets.spreadsheets.values.update({
@@ -96,8 +96,15 @@ function hasEquivalentApplication(rows: unknown[][], application: Application) {
   return rows.some((row) => normalize(row[2]) === company && normalize(row[3]) === role && normalize(row[1]) === appliedDate);
 }
 
-function getActualApplicationRows(rows: unknown[][]) {
-  return rows.slice(1).filter(isActualApplicationRow);
+function getContiguousApplicationRows(rows: unknown[][]) {
+  const contiguousRows: unknown[][] = [];
+
+  for (const row of rows.slice(1)) {
+    if (!isActualApplicationRow(row)) break;
+    contiguousRows.push(row);
+  }
+
+  return contiguousRows;
 }
 
 function isActualApplicationRow(row: unknown[]) {
