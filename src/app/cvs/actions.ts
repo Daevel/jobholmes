@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createCvForUser } from "@/lib/cvs/service";
+import { createCvForUser } from "@/lib/cvs/upload";
 import { requireCurrentUser } from "@/lib/current-user";
 
 export type CvUploadState = {

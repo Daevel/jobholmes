@@ -1,5 +1,6 @@
 import { requireCurrentUser } from "@/lib/current-user";
-import { getCvDownloadForUser } from "@/lib/cvs/service";
+import { getCvForUser } from "@/lib/cvs/service";
+import { getPrivateCvPdf } from "@/lib/cvs/storage";
 import { z } from "zod";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
@@ -10,13 +11,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const parsed = paramsSchema.safeParse(await params);
     if (!parsed.success) return Response.json({ error: "Invalid CV." }, { status: 400 });
 
-    const download = await getCvDownloadForUser(user.id, parsed.data.id);
-    if (!download) return Response.json({ error: "CV not found." }, { status: 404 });
+    const cv = await getCvForUser(user.id, parsed.data.id);
+    if (!cv) return Response.json({ error: "CV not found." }, { status: 404 });
 
-    return new Response(download.blob.stream, {
+    const blob = await getPrivateCvPdf(cv.storagePath);
+    if (!blob) return Response.json({ error: "CV file not found." }, { status: 404 });
+
+    return new Response(blob.stream, {
       headers: {
-        "Content-Type": download.cv.mimeType,
-        "Content-Disposition": `attachment; filename="${download.cv.originalFileName.replace(/"/g, "")}"`,
+        "Content-Type": cv.mimeType,
+        "Content-Disposition": `attachment; filename="${cv.originalFileName.replace(/"/g, "")}"`,
       },
     });
   } catch (error) {
