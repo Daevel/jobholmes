@@ -295,13 +295,13 @@ function LogoMark() {
 }
 
 function DashboardIcon() {
-  return <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10.5 10 4l7 6.5V17a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1v-6.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>;
+  return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10.5 10 4l7 6.5V17a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1v-6.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>;
 }
 
 function ListIcon() {
-  return <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M6 5h11M6 10h11M6 15h11M3 5h.01M3 10h.01M3 15h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>;
+  return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M6 5h11M6 10h11M6 15h11M3 5h.01M3 10h.01M3 15h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>;
 }
 
 function PlusIcon() {
-  return <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>;
+  return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>;
 }

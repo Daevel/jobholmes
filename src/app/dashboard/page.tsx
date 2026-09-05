@@ -92,7 +92,7 @@ function RecentApplications({ applications }: { applications: RecentApplication[
   );
 }
 
-function ChartIcon() { return <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 16V8m6 8V4m6 12v-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>; }
-function ProgressIcon() { return <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3a7 7 0 1 1-6.3 10M10 3v7h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
-function MatchIcon() { return <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
-function CloseIcon() { return <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 6 8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>; }
+function ChartIcon() { return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 16V8m6 8V4m6 12v-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>; }
+function ProgressIcon() { return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3a7 7 0 1 1-6.3 10M10 3v7h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+function MatchIcon() { return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+function CloseIcon() { return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 6 8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>; }
