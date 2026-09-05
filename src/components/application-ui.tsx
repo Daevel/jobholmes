@@ -9,6 +9,7 @@ type BadgeTone = "neutral" | "green" | "amber" | "red" | "blue" | "purple" | "or
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
   { label: "Applications", href: "/applications", icon: ListIcon },
+  { label: "AI Analyst", href: "/ai", icon: AnalystIcon },
   { label: "Add application", href: "/applications/new", icon: PlusIcon },
 ];
 
@@ -239,7 +240,7 @@ function MobileHeader({ accountLabel }: { accountLabel: string }) {
 
 function MobileNavigation({ currentPath }: { currentPath: string }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur lg:hidden" aria-label="Mobile primary navigation">
+    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur lg:hidden" aria-label="Mobile primary navigation">
       {navItems.map((item) => (
         <MobileNavItem key={item.href} currentPath={currentPath} {...item} />
       ))}
@@ -263,7 +264,7 @@ function MobileNavItem({ label, href, icon: Icon, currentPath }: { label: string
   return (
     <Link className={`flex flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-500 ${active ? "text-indigo-700" : "text-slate-500"}`} href={href} aria-current={active ? "page" : undefined}>
       <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${isAdd ? "bg-indigo-600 text-white" : active ? "bg-indigo-50" : ""}`}><Icon /></span>
-      {label.replace(" application", "")}
+      {label.replace(" application", "").replace("AI Analyst", "AI")}
     </Link>
   );
 }
@@ -302,6 +303,10 @@ function DashboardIcon() {
 
 function ListIcon() {
   return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M6 5h11M6 10h11M6 15h11M3 5h.01M3 10h.01M3 15h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>;
+}
+
+function AnalystIcon() {
+  return <svg className="h-4 w-4" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 14.5V16m4-5v5m4-8v8m4-11v11M3 16h14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
 function PlusIcon() {
