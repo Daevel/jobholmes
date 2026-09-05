@@ -40,17 +40,20 @@ export async function syncApplicationToGoogleSheet(application: Application) {
     return { status: "skipped" as const };
   }
 
-  await sheets.spreadsheets.values.append({
+  const actualRows = getActualApplicationRows(rows);
+  const sheetId = getNextSheetId(actualRows);
+  const sheetRow = getFirstFreeApplicationRow(rows);
+
+  await sheets.spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!A:X`,
+    range: `${config.sheetName}!A${sheetRow}:X${sheetRow}`,
     valueInputOption: "USER_ENTERED",
-    insertDataOption: "INSERT_ROWS",
     requestBody: {
-      values: [toSheetRow(application, getNextSheetId(rows))],
+      values: [toSheetRow(application, sheetId)],
     },
   });
 
-  return { status: "inserted" as const };
+  return { status: "inserted" as const, sheetRow, sheetId };
 }
 
 function getGoogleSheetsConfig() {
@@ -91,6 +94,21 @@ function hasEquivalentApplication(rows: unknown[][], application: Application) {
   const role = normalize(application.role);
 
   return rows.some((row) => normalize(row[2]) === company && normalize(row[3]) === role && normalize(row[1]) === appliedDate);
+}
+
+function getActualApplicationRows(rows: unknown[][]) {
+  return rows.slice(1).filter(isActualApplicationRow);
+}
+
+function isActualApplicationRow(row: unknown[]) {
+  return normalize(row[2]) !== "" || normalize(row[3]) !== "";
+}
+
+function getFirstFreeApplicationRow(rows: unknown[][]) {
+  const firstDataRow = 2;
+  const firstFreeIndex = rows.slice(1).findIndex((row) => normalize(row[2]) === "" && normalize(row[3]) === "");
+
+  return firstFreeIndex === -1 ? rows.length + 1 : firstDataRow + firstFreeIndex;
 }
 
 function getNextSheetId(rows: unknown[][]) {
