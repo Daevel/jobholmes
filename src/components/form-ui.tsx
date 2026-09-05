@@ -35,7 +35,7 @@ function buttonClasses(variant: "primary" | "secondary" | "ghost" | "danger") {
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-500",
     secondary: "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-indigo-500",
     ghost: "text-slate-600 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-indigo-500",
-    danger: "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:ring-red-500",
+    danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
   };
   return `${base} ${variants[variant]}`;
 }

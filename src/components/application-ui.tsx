@@ -36,13 +36,15 @@ const outcomeTones = {
   OFFER: "green",
 } as const;
 
-export function AppShell({ children, accountLabel, currentPath }: { children: React.ReactNode; accountLabel: string; currentPath: string }) {
+export function AppShell({ children, accountLabel, currentPath, contentSize = "normal" }: { children: React.ReactNode; accountLabel: string; currentPath: string; contentSize?: "normal" | "wide" }) {
+  const contentWidth = contentSize === "wide" ? "max-w-[1320px]" : "max-w-[1180px]";
+
   return (
     <div className="min-h-screen bg-[#F7F8FA] text-slate-900">
       <DesktopSidebar accountLabel={accountLabel} currentPath={currentPath} />
       <MobileHeader accountLabel={accountLabel} />
       <main className="mx-auto w-full max-w-[1360px] px-4 pb-24 pt-5 sm:px-6 md:pt-8 lg:pl-[264px] lg:pr-8">
-        <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 sm:gap-8">{children}</div>
+        <div className={`mx-auto flex w-full ${contentWidth} flex-col gap-6 sm:gap-8`}>{children}</div>
       </main>
       <MobileNavigation currentPath={currentPath} />
     </div>
@@ -272,7 +274,7 @@ function buttonClasses(variant: "primary" | "secondary" | "ghost" | "danger") {
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-500",
     secondary: "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-indigo-500",
     ghost: "text-slate-600 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-indigo-500",
-    danger: "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:ring-red-500",
+    danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
   };
   return `${base} ${variants[variant]}`;
 }
