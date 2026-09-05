@@ -100,6 +100,14 @@ function AppHeader({ accountLabel }: { accountLabel: string }) {
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <p className="max-w-72 truncate text-sm text-zinc-400 sm:text-right">{accountLabel}</p>
+        <nav className="flex items-center gap-2 text-sm" aria-label="Primary navigation">
+          <Link className="rounded-lg px-3 py-2 text-zinc-300 outline-none transition hover:bg-zinc-900 hover:text-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-500" href="/dashboard">
+            Dashboard
+          </Link>
+          <Link className="rounded-lg px-3 py-2 text-zinc-300 outline-none transition hover:bg-zinc-900 hover:text-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-500" href="/applications">
+            Applications
+          </Link>
+        </nav>
         <form
           action={async () => {
             "use server";
@@ -203,8 +211,15 @@ function RecentApplications({ applications }: { applications: RecentApplication[
   return (
     <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/45 shadow-[0_1px_0_rgba(255,255,255,0.03)]">
       <div className="border-b border-zinc-800 px-5 py-4 sm:px-6">
-        <h2 className="text-lg font-semibold tracking-tight text-zinc-50">Recent applications</h2>
-        <p className="mt-1 text-sm text-zinc-500">Latest 5 applications by applied date.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-zinc-50">Recent applications</h2>
+            <p className="mt-1 text-sm text-zinc-500">Latest 5 applications by applied date.</p>
+          </div>
+          <Link className="text-sm font-medium text-zinc-300 outline-none transition hover:text-white focus-visible:ring-2 focus-visible:ring-zinc-500" href="/applications">
+            View all applications
+          </Link>
+        </div>
       </div>
       <ApplicationsTable applications={applications} />
       <ApplicationsMobileList applications={applications} />
@@ -230,7 +245,7 @@ function ApplicationsTable({ applications }: { applications: RecentApplication[]
         <tbody className="divide-y divide-zinc-800">
           {applications.map((application) => (
             <tr key={application.id} className="transition hover:bg-zinc-900/70">
-              <td className="px-5 py-4 font-medium text-zinc-100">{application.company}</td>
+              <td className="px-5 py-4"><Link className="font-medium text-zinc-100 outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-zinc-500" href={`/applications/${application.id}`}>{application.company}</Link></td>
               <td className="px-5 py-4 text-zinc-300">{application.role}</td>
               <td className="px-5 py-4 text-zinc-400">{application.country || "-"}</td>
               <td className="px-5 py-4 text-zinc-400">{dateFormatter.format(application.appliedAt)}</td>
@@ -249,7 +264,7 @@ function ApplicationsMobileList({ applications }: { applications: RecentApplicat
   return (
     <div className="divide-y divide-zinc-800 lg:hidden">
       {applications.map((application) => (
-        <article key={application.id} className="px-5 py-4">
+        <Link key={application.id} className="block px-5 py-4 outline-none transition hover:bg-zinc-900/70 focus-visible:ring-2 focus-visible:ring-zinc-500" href={`/applications/${application.id}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-medium text-zinc-100">{application.company}</h3>
@@ -269,7 +284,7 @@ function ApplicationsMobileList({ applications }: { applications: RecentApplicat
               <dd className="mt-1"><StageBadge value={application.stage} /></dd>
             </div>
           </dl>
-        </article>
+        </Link>
       ))}
     </div>
   );

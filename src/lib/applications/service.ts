@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { applications } from "@/db/schema";
-import type { CreateApplicationInput } from "@/lib/applications/schema";
+import type { CreateApplicationInput, UpdateApplicationInput } from "@/lib/applications/schema";
 export function listApplicationsForUser(userId:string){return db.select().from(applications).where(eq(applications.userId,userId)).orderBy(desc(applications.appliedAt));}
 export async function getApplicationForUser(userId:string,applicationId:string){const [row]=await db.select().from(applications).where(and(eq(applications.userId,userId),eq(applications.id,applicationId))).limit(1);return row??null;}
 
@@ -92,4 +92,43 @@ export async function createApplicationForUser(userId: string, input: CreateAppl
     .returning();
 
   return created;
+}
+
+export async function updateApplicationForUser(userId: string, applicationId: string, input: UpdateApplicationInput) {
+  const previous = await getApplicationForUser(userId, applicationId);
+
+  if (!previous) return null;
+
+  const [updated] = await db
+    .update(applications)
+    .set({
+      appliedAt: input.appliedAt,
+      company: input.company,
+      role: input.role,
+      roleCategory: input.roleCategory ?? null,
+      seniority: input.seniority ?? null,
+      country: input.country ?? null,
+      workMode: input.workMode ?? null,
+      source: input.source ?? null,
+      vacancyUrl: input.vacancyUrl ?? null,
+      cvVersion: input.cvVersion ?? null,
+      userMatchClass: input.userMatchClass ?? null,
+      userMatchPercentage: input.userMatchPercentage ?? null,
+      workAuthorization: input.workAuthorization ?? null,
+      sponsorshipRequired: input.sponsorshipRequired,
+      salaryMin: input.salaryMin ?? null,
+      salaryMax: input.salaryMax ?? null,
+      currency: input.currency ?? null,
+      outcome: input.outcome,
+      stage: input.stage,
+      responseAt: input.responseAt ?? null,
+      rejectionReason: input.rejectionReason ?? null,
+      requirementsAndGaps: input.requirementsAndGaps ?? null,
+      notes: input.notes ?? null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(applications.userId, userId), eq(applications.id, applicationId)))
+    .returning();
+
+  return { previous, updated };
 }

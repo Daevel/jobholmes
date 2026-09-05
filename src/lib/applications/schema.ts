@@ -41,3 +41,15 @@ export const createApplicationSchema = z
   });
 
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
+
+export const updateApplicationSchema = createApplicationSchema
+  .extend({
+    responseAt: z.preprocess(emptyToUndefined, z.coerce.date().optional()),
+    rejectionReason: optionalTrimmedString(10000),
+  })
+  .transform((input) => ({
+    ...input,
+    outcome: input.stage === "OFFER" ? "OFFER" : input.outcome,
+  }));
+
+export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;

@@ -5,7 +5,7 @@ import { createApplicationForUser } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
 import { syncApplicationToGoogleSheet } from "@/lib/google/sheets";
 import { redirect } from "next/navigation";
-import { CreateApplicationFormState } from "./form-state";
+import type { CreateApplicationFormState } from "./form-state";
 
 export async function createApplicationAction(
   _previousState: CreateApplicationFormState,
@@ -33,8 +33,6 @@ export async function createApplicationAction(
         company: application.company,
         role: application.role,
         errorName: error instanceof Error ? error.name : "UnknownError",
-        errorMessage: error instanceof Error ? error.message : String(error),
-        errorStack: error instanceof Error ? error.stack : undefined,
       });
     }
   } catch {

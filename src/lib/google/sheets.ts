@@ -56,6 +56,30 @@ export async function syncApplicationToGoogleSheet(application: Application) {
   return { status: "inserted" as const, sheetRow, sheetId };
 }
 
+export async function syncUpdatedApplicationToGoogleSheet(application: Application, previousApplication: Application) {
+  const config = getGoogleSheetsConfig();
+  const sheets = getGoogleSheetsClient(config);
+  const rows = await getExistingRows(sheets, config);
+  const foundRow = findEquivalentApplicationRow(rows, previousApplication) ?? findEquivalentApplicationRow(rows, application);
+
+  if (!foundRow) {
+    return { status: "missing" as const };
+  }
+
+  const sheetId = getExistingSheetId(foundRow.row) ?? getNextSheetId(getContiguousApplicationRows(rows));
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: config.spreadsheetId,
+    range: `${config.sheetName}!A${foundRow.sheetRow}:X${foundRow.sheetRow}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [toSheetRow(application, sheetId)],
+    },
+  });
+
+  return { status: "updated" as const, sheetRow: foundRow.sheetRow, sheetId };
+}
+
 function getGoogleSheetsConfig() {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -89,11 +113,17 @@ async function getExistingRows(sheets: ReturnType<typeof getGoogleSheetsClient>,
 }
 
 function hasEquivalentApplication(rows: unknown[][], application: Application) {
+  return findEquivalentApplicationRow(rows, application) !== null;
+}
+
+function findEquivalentApplicationRow(rows: unknown[][], application: Application) {
   const appliedDate = formatDate(application.appliedAt);
   const company = normalize(application.company);
   const role = normalize(application.role);
 
-  return rows.some((row) => normalize(row[2]) === company && normalize(row[3]) === role && normalize(row[1]) === appliedDate);
+  const rowIndex = rows.findIndex((row) => normalize(row[2]) === company && normalize(row[3]) === role && normalize(row[1]) === appliedDate);
+
+  return rowIndex === -1 ? null : { row: rows[rowIndex], sheetRow: rowIndex + 1 };
 }
 
 function getContiguousApplicationRows(rows: unknown[][]) {
@@ -125,6 +155,11 @@ function getNextSheetId(rows: unknown[][]) {
   }, 0);
 
   return maxId + 1;
+}
+
+function getExistingSheetId(row: unknown[]) {
+  const value = typeof row[0] === "string" || typeof row[0] === "number" ? Number(row[0]) : Number.NaN;
+  return Number.isInteger(value) && value > 0 ? value : null;
 }
 
 function toSheetRow(application: Application, sheetId: number) {
