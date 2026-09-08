@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { applications } from "@/db/schema";
 import { getOpenAIClient } from "@/lib/ai/client";
 import { extractJobRequirements } from "@/lib/ai/jd-requirements";
+import { compareRequirementsToCv } from "@/lib/ai/requirement-evidence";
 import { getApplicationForUser } from "@/lib/applications/service";
 import { getCvForUser } from "@/lib/cvs/service";
 
@@ -23,6 +24,7 @@ export async function analyzeApplicationMatch(userId: string, applicationId: str
   if (!cv.extractedText?.trim()) return { status: "missing_cv_text" as const };
 
   const { requirements } = await extractJobRequirements(application.jdText);
+  const { assessments: requirementAssessments } = await compareRequirementsToCv(requirements, cv.extractedText);
 
   const openai = getOpenAIClient();
   const response = await openai.responses.create({
@@ -61,7 +63,7 @@ export async function analyzeApplicationMatch(userId: string, applicationId: str
     .where(and(eq(applications.userId, userId), eq(applications.id, applicationId)))
     .returning();
 
-  return { status: "complete" as const, application: updated, score: parsed.score, confidence: parsed.confidence, matchClass, requirements };
+  return { status: "complete" as const, application: updated, score: parsed.score, confidence: parsed.confidence, matchClass, requirements, requirementAssessments };
 }
 
 export function deriveAiMatchClass(score: number) {
