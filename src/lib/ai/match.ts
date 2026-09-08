@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { applications } from "@/db/schema";
 import { getOpenAIClient } from "@/lib/ai/client";
+import { extractJobRequirements } from "@/lib/ai/jd-requirements";
 import { getApplicationForUser } from "@/lib/applications/service";
 import { getCvForUser } from "@/lib/cvs/service";
 
@@ -20,6 +21,8 @@ export async function analyzeApplicationMatch(userId: string, applicationId: str
   const cv = await getCvForUser(userId, application.cvDocumentId);
   if (!cv) return { status: "missing_cv" as const };
   if (!cv.extractedText?.trim()) return { status: "missing_cv_text" as const };
+
+  const { requirements } = await extractJobRequirements(application.jdText);
 
   const openai = getOpenAIClient();
   const response = await openai.responses.create({
@@ -58,7 +61,7 @@ export async function analyzeApplicationMatch(userId: string, applicationId: str
     .where(and(eq(applications.userId, userId), eq(applications.id, applicationId)))
     .returning();
 
-  return { status: "complete" as const, application: updated, score: parsed.score, confidence: parsed.confidence, matchClass };
+  return { status: "complete" as const, application: updated, score: parsed.score, confidence: parsed.confidence, matchClass, requirements };
 }
 
 export function deriveAiMatchClass(score: number) {
