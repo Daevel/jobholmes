@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell, ButtonLink, PageHeader } from "@/components/application-ui";
+import { parseRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { EditApplicationForm } from "@/app/applications/[id]/edit/form";
 import { formatDateInput } from "@/lib/applications/display";
 import { getApplicationForUser } from "@/lib/applications/service";
@@ -12,6 +13,8 @@ export default async function EditApplicationPage({ params }: { params: Promise<
   const [application, cvs] = await Promise.all([getApplicationForUser(user.id, id), listCvsForUser(user.id)]);
 
   if (!application) notFound();
+
+  const requirementsAndGaps = parseRequirementsAndGaps(application.requirementsAndGaps);
 
   const defaults = {
     appliedAt: formatDateInput(application.appliedAt),
@@ -37,7 +40,7 @@ export default async function EditApplicationPage({ params }: { params: Promise<
     stage: application.stage,
     responseAt: formatDateInput(application.responseAt),
     rejectionReason: application.rejectionReason ?? "",
-    requirementsAndGaps: application.requirementsAndGaps ?? "",
+    requirementsAndGaps: requirementsAndGaps.kind === "legacy" ? requirementsAndGaps.text : "",
     notes: application.notes ?? "",
   };
 

@@ -2,6 +2,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { applications } from "@/db/schema";
 import type { CreateApplicationInput, UpdateApplicationInput } from "@/lib/applications/schema";
+import { parseRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { getCvForUser } from "@/lib/cvs/service";
 export function listApplicationsForUser(userId:string){return db.select().from(applications).where(eq(applications.userId,userId)).orderBy(desc(applications.appliedAt));}
 export async function getApplicationForUser(userId:string,applicationId:string){const [row]=await db.select().from(applications).where(and(eq(applications.userId,userId),eq(applications.id,applicationId))).limit(1);return row??null;}
@@ -117,6 +118,9 @@ export async function updateApplicationForUser(userId: string, applicationId: st
   const normalizedJdText = input.jdText ?? null;
   const nextCvDocumentId = selectedCv?.id ?? null;
   const shouldInvalidateAiMatch = previous.jdText !== normalizedJdText || previous.cvDocumentId !== nextCvDocumentId;
+  const previousRequirementsAndGaps = parseRequirementsAndGaps(previous.requirementsAndGaps);
+  const parsedRequirementsAndGaps = parseRequirementsAndGaps(input.requirementsAndGaps);
+  const requirementsAndGaps = getNextRequirementsAndGaps({ shouldInvalidateAiMatch, previousValue: previous.requirementsAndGaps, previousParsed: previousRequirementsAndGaps, inputValue: input.requirementsAndGaps, inputParsed: parsedRequirementsAndGaps });
 
   const [updated] = await db
     .update(applications)
@@ -147,7 +151,7 @@ export async function updateApplicationForUser(userId: string, applicationId: st
       stage: input.stage,
       responseAt: input.responseAt ?? null,
       rejectionReason: input.rejectionReason ?? null,
-      requirementsAndGaps: input.requirementsAndGaps ?? null,
+      requirementsAndGaps,
       notes: input.notes ?? null,
       jdVerifiedAt: shouldInvalidateAiMatch ? null : previous.jdVerifiedAt,
       updatedAt: new Date(),
@@ -156,4 +160,11 @@ export async function updateApplicationForUser(userId: string, applicationId: st
     .returning();
 
   return { previous, updated };
+}
+
+function getNextRequirementsAndGaps({ shouldInvalidateAiMatch, previousValue, previousParsed, inputValue, inputParsed }: { shouldInvalidateAiMatch: boolean; previousValue: string | null; previousParsed: ReturnType<typeof parseRequirementsAndGaps>; inputValue?: string; inputParsed: ReturnType<typeof parseRequirementsAndGaps> }) {
+  if (shouldInvalidateAiMatch && previousParsed.kind === "structured") return inputParsed.kind === "legacy" ? inputValue ?? null : null;
+  if (!shouldInvalidateAiMatch && previousParsed.kind === "structured" && inputParsed.kind === "empty") return previousValue;
+  if (shouldInvalidateAiMatch && inputParsed.kind === "structured") return null;
+  return inputValue ?? null;
 }

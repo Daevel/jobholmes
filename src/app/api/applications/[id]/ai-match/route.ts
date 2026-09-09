@@ -28,7 +28,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       }
     }
 
-    return Response.json({ application: result.application, score: result.score, confidence: result.confidence, matchClass: result.matchClass, requirements: result.requirements, requirementAssessments: result.requirementAssessments, gaps: result.gaps, unverifiedRequirements: result.unverifiedRequirements });
+    return Response.json({ application: result.application, score: result.score, matchClass: result.matchClass, confidence: result.confidence, provisional: result.provisional, provisionalReasons: result.provisionalReasons, requirements: result.requirements, assessments: result.assessments, requirementAssessments: result.requirementAssessments, gaps: result.gaps, unverifiedRequirements: result.unverifiedRequirements });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return Response.json({ error: "You must be signed in to analyze a match." }, { status: 401 });

@@ -142,7 +142,8 @@ export function MatchBadge({ value }: { value: Application["userMatchClass"] }) 
 }
 
 export function AiMatchBadge({ value, percentage }: { value: Application["aiMatchClass"]; percentage: Application["aiMatchPercentage"] }) {
-  if (!value || percentage === null) return <Badge tone="neutral">Not analyzed</Badge>;
+  if (!value) return <Badge tone="neutral">Not analyzed</Badge>;
+  if (percentage === null) return <Badge tone={matchTones[value]}>{matchLabels[value]}</Badge>;
   return <Badge tone={matchTones[value]}>{matchLabels[value]} {percentage}%</Badge>;
 }
 
