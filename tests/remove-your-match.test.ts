@@ -4,6 +4,7 @@ import { AI_MATCH_UNANALYZED, countAiMatchClasses, matchesAiMatchFilter } from "
 import { createApplicationSchema, legacyApplicationImportSchema, updateApplicationSchema } from "@/lib/applications/schema";
 import { legacyManualMatchValues } from "@/lib/applications/legacy";
 import { getNextRequirementsAndGaps } from "@/lib/applications/requirements-preservation";
+import { getNextRejectionReason, shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
 import { buildAiMatchBreakdown } from "@/lib/ai/match-breakdown";
 import { serializeApplicationForAiContext } from "@/lib/ai/context-application";
 import { serializeRequirementsAndGaps, type RequirementsAndGapsPayload } from "@/lib/ai/requirements-and-gaps";
@@ -57,10 +58,11 @@ test("AI context breakdown uses AI classes and represents unanalyzed application
 test("AI context serialization excludes legacy manual notes", () => {
   const contextApplication = serializeApplicationForAiContext({
     company: "Acme",
+    stageContext: "Technical interview will cover system design.",
     requirementsAndGaps: "Legacy strong match assessment",
   });
 
-  assert.deepEqual(contextApplication, { company: "Acme", requirementsAndGaps: null });
+  assert.deepEqual(contextApplication, { company: "Acme", stageContext: "Technical interview will cover system design.", requirementsAndGaps: null });
 });
 
 test("active create and edit inputs reject manual match values", () => {
@@ -68,6 +70,39 @@ test("active create and edit inputs reject manual match values", () => {
   assert.equal(createApplicationSchema.safeParse({ ...activeInput, userMatchPercentage: 95 }).success, false);
   assert.equal(updateApplicationSchema.safeParse({ ...activeInput, outcome: "IN_PROGRESS", stage: "APPLICATION", userMatchClass: "A_STRONG" }).success, false);
   assert.equal(updateApplicationSchema.safeParse({ ...activeInput, outcome: "IN_PROGRESS", stage: "APPLICATION", userMatchPercentage: 95 }).success, false);
+});
+
+test("create and update inputs retain stage context", () => {
+  const stageContext = "Recruiter confirmed the screening format.";
+  const created = createApplicationSchema.parse({ ...activeInput, stageContext });
+  const updated = updateApplicationSchema.parse({ ...activeInput, stageContext, outcome: "IN_PROGRESS", stage: "RECRUITER_SCREENING" });
+
+  assert.equal(created.stageContext, stageContext);
+  assert.equal(updated.stageContext, stageContext);
+});
+
+test("rejection reason is visible only for rejected applications", () => {
+  assert.equal(shouldShowRejectionReason("REJECTED"), true);
+  assert.equal(shouldShowRejectionReason("IN_PROGRESS"), false);
+  assert.equal(shouldShowRejectionReason("OFFER"), false);
+});
+
+test("non-rejected edits preserve historical rejection reasons", () => {
+  assert.equal(
+    getNextRejectionReason({ outcome: "IN_PROGRESS", submittedValue: undefined, previousValue: "Historical rejection feedback" }),
+    "Historical rejection feedback",
+  );
+});
+
+test("rejected edits can update or clear rejection reasons", () => {
+  assert.equal(
+    getNextRejectionReason({ outcome: "REJECTED", submittedValue: "Missing required experience.", previousValue: "Old feedback" }),
+    "Missing required experience.",
+  );
+  assert.equal(
+    getNextRejectionReason({ outcome: "REJECTED", submittedValue: undefined, previousValue: "Old feedback" }),
+    null,
+  );
 });
 
 test("unrelated edits preserve historical values and structured AI analysis", () => {
@@ -119,6 +154,7 @@ test("Google Sheets keeps legacy manual cells positioned and untouched", () => {
     outcome: "IN_PROGRESS" as const,
     stage: "APPLICATION" as const,
     responseAt: null,
+    stageContext: "Recruiter call booked.",
     rejectionReason: null,
     rejectionType: null,
     requirementsAndGaps: null,
@@ -135,6 +171,7 @@ test("Google Sheets keeps legacy manual cells positioned and untouched", () => {
   assert.deepEqual(newRow.slice(11, 13), ["", ""]);
   assert.deepEqual(updatedRow.slice(11, 13), ["A - Strong", "95%"]);
   assert.deepEqual(updatedRow.slice(25, 28), ["B - Stretch", "65%", "80%"]);
+  assert.equal(updatedRow[28], "Recruiter call booked.");
 });
 
 type HasManualMatchFields<T> = "userMatchClass" extends keyof T ? true : "userMatchPercentage" extends keyof T ? true : false;

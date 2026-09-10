@@ -37,6 +37,7 @@ export default async function EditApplicationPage({ params }: { params: Promise<
     outcome: application.outcome,
     stage: application.stage,
     responseAt: formatDateInput(application.responseAt),
+    stageContext: application.stageContext ?? "",
     rejectionReason: application.rejectionReason ?? "",
     requirementsAndGaps: requirementsAndGaps.kind === "legacy" ? requirementsAndGaps.text : "",
     notes: application.notes ?? "",

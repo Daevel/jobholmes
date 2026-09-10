@@ -67,6 +67,7 @@ export async function buildJobSearchContext(userId: string) {
       outcome: applications.outcome,
       stage: applications.stage,
       responseAt: applications.responseAt,
+      stageContext: applications.stageContext,
       rejectionReason: applications.rejectionReason,
       rejectionType: applications.rejectionType,
       requirementsAndGaps: applications.requirementsAndGaps,

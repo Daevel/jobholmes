@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AiMatchBadge, AppShell, ButtonLink, DetailField, OutcomeBadge, SectionCard, StageBadge } from "@/components/application-ui";
 import { parseRequirementsAndGaps, type ParsedRequirementsAndGaps, type RequirementsAndGapsPayload } from "@/lib/ai/requirements-and-gaps";
 import { formatDate, formatSalary, getDaysToResponse } from "@/lib/applications/display";
+import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
 import { getApplicationForUser } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
 import { AiMatchButton } from "./ai-match-button";
@@ -80,7 +81,8 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             <DetailField label="Outcome"><OutcomeBadge value={application.outcome} /></DetailField>
             <DetailField label="Response date" value={formatDate(application.responseAt)} />
             <DetailField label="Days to response" value={daysToResponse === null ? "-" : String(daysToResponse)} />
-            <DetailField label="Rejection reason" value={application.rejectionReason} wide wrap />
+            <DetailField label="Stage context" value={application.stageContext} wide wrap />
+            {shouldShowRejectionReason(application.outcome) ? <DetailField label="Rejection reason" value={application.rejectionReason} wide wrap /> : null}
           </dl>
         </SectionCard>
 

@@ -36,6 +36,7 @@ const baseApplicationFields = z
     salaryMin: optionalPositiveInteger,
     salaryMax: optionalPositiveInteger,
     currency: optionalTrimmedString(10),
+    stageContext: optionalText,
     notes: optionalText,
   })
   .strict();

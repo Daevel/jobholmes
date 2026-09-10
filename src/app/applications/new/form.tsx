@@ -53,6 +53,14 @@ export function NewApplicationForm({ today, cvs }: { today: string; cvs: CvOptio
       </section>
 
       <section className={formStyles.section}>
+        <h2 className={formStyles.sectionTitle}>Application context</h2>
+        <p className={formStyles.sectionDescription}>Add context relevant to this application stage, such as submission details or early feedback.</p>
+        <div className="mt-5">
+          <TextareaField label="Stage context" name="stageContext" placeholder="Submission details, recruiter feedback, or next steps..." state={state} />
+        </div>
+      </section>
+
+      <section className={formStyles.section}>
         <h2 className={formStyles.sectionTitle}>Notes</h2>
         <div className="mt-5">
           <TextareaField label="Notes" name="notes" placeholder="Context, recruiter notes, next steps..." state={state} />

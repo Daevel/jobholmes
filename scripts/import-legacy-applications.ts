@@ -218,6 +218,7 @@ async function main() {
         outcome: input.outcome,
         stage: input.stage,
         responseAt: legacyApplication.responseAt ?? null,
+        stageContext: input.stageContext ?? null,
         rejectionReason: legacyApplication.rejectionReason ?? null,
         requirementsAndGaps: input.requirementsAndGaps ?? null,
         notes: input.notes ?? null,

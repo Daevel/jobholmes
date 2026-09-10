@@ -72,6 +72,7 @@ export const applications = pgTable("applications", {
   outcome: applicationOutcomeEnum("outcome").default("PENDING").notNull(),
   stage: applicationStageEnum("stage").default("APPLICATION").notNull(),
   responseAt: timestamp("response_at", { withTimezone: true }),
+  stageContext: text("stage_context"),
   rejectionReason: text("rejection_reason"),
   rejectionType: varchar("rejection_type", { length: 80 }),
   requirementsAndGaps: text("requirements_and_gaps"),

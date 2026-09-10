@@ -4,6 +4,7 @@ import { applications } from "@/db/schema";
 import type { CreateApplicationInput, UpdateApplicationInput } from "@/lib/applications/schema";
 import { getCvForUser } from "@/lib/cvs/service";
 import { getNextRequirementsAndGaps } from "@/lib/applications/requirements-preservation";
+import { getNextRejectionReason } from "@/lib/applications/rejection-reason";
 export { getNextRequirementsAndGaps } from "@/lib/applications/requirements-preservation";
 export function listApplicationsForUser(userId:string){return db.select().from(applications).where(eq(applications.userId,userId)).orderBy(desc(applications.appliedAt));}
 export async function getApplicationForUser(userId:string,applicationId:string){const [row]=await db.select().from(applications).where(and(eq(applications.userId,userId),eq(applications.id,applicationId))).limit(1);return row??null;}
@@ -94,6 +95,7 @@ export async function createApplicationForUser(userId: string, input: CreateAppl
       currency: input.currency ?? null,
       outcome: "IN_PROGRESS",
       stage: "APPLICATION",
+      stageContext: input.stageContext ?? null,
       notes: input.notes ?? null,
     })
     .returning();
@@ -113,6 +115,7 @@ export async function updateApplicationForUser(userId: string, applicationId: st
   const nextCvDocumentId = selectedCv?.id ?? null;
   const shouldInvalidateAiMatch = previous.jdText !== normalizedJdText || previous.cvDocumentId !== nextCvDocumentId;
   const requirementsAndGaps = getNextRequirementsAndGaps(shouldInvalidateAiMatch, previous.requirementsAndGaps);
+  const rejectionReason = getNextRejectionReason({ outcome: input.outcome, submittedValue: input.rejectionReason, previousValue: previous.rejectionReason });
 
   const [updated] = await db
     .update(applications)
@@ -140,7 +143,8 @@ export async function updateApplicationForUser(userId: string, applicationId: st
       outcome: input.outcome,
       stage: input.stage,
       responseAt: input.responseAt ?? null,
-      rejectionReason: input.rejectionReason ?? null,
+      stageContext: input.stageContext ?? null,
+      rejectionReason,
       requirementsAndGaps,
       notes: input.notes ?? null,
       jdVerifiedAt: shouldInvalidateAiMatch ? null : previous.jdVerifiedAt,

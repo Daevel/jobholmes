@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { updateApplicationAction } from "@/app/applications/[id]/edit/actions";
 import { initialUpdateApplicationFormState, type UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
+import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
 
 const outcomeOptions = [
   { value: "PENDING", label: "Pending" },
@@ -30,6 +31,7 @@ type EditDefaults = NonNullable<UpdateApplicationFormState["values"]> & { legacy
 export function EditApplicationForm({ applicationId, defaults, cvs }: { applicationId: string; defaults: EditDefaults; cvs: CvOption[] }) {
   const [state, formAction, pending] = useActionState(updateApplicationAction.bind(null, applicationId), initialUpdateApplicationFormState);
   const values = state.values ?? defaults;
+  const [outcome, setOutcome] = useState(values.outcome ?? "");
 
   return (
     <form action={formAction} className="space-y-5" id="application-form">
@@ -75,10 +77,11 @@ export function EditApplicationForm({ applicationId, defaults, cvs }: { applicat
       <section className={formStyles.section}>
         <h2 className={formStyles.sectionTitle}>Application status</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
-          <SelectField label="Outcome" name="outcome" options={outcomeOptions} state={state} values={values} />
+          <SelectField label="Outcome" name="outcome" onChange={(event) => setOutcome(event.target.value)} options={outcomeOptions} state={state} values={values} />
           <SelectField label="Stage" name="stage" options={stageOptions} state={state} values={values} />
           <Field label="Response date" name="responseAt" state={state} type="date" values={values} />
-          <TextareaField className="md:col-span-3" label="Rejection reason" name="rejectionReason" state={state} values={values} />
+          <TextareaField className="md:col-span-3" label="Stage context" name="stageContext" state={state} values={values} />
+          {shouldShowRejectionReason(outcome) ? <TextareaField className="md:col-span-3" label="Rejection reason" name="rejectionReason" state={state} values={values} /> : null}
         </div>
       </section>
 
@@ -144,9 +147,9 @@ function Field({ state, values, label, name, ...props }: { state: UpdateApplicat
   return <label className={formStyles.label}>{label}{props.required ? <span className="text-red-600"> *</span> : null}<input className={formStyles.input} defaultValue={values[name] ?? ""} name={name} {...props} />{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
 }
 
-function SelectField({ state, values, label, name, options }: { state: UpdateApplicationFormState; values: NonNullable<UpdateApplicationFormState["values"]>; label: string; name: FieldName; options: readonly { value: string; label: string }[] }) {
+function SelectField({ state, values, label, name, options, onChange }: { state: UpdateApplicationFormState; values: NonNullable<UpdateApplicationFormState["values"]>; label: string; name: FieldName; options: readonly { value: string; label: string }[]; onChange?: React.ChangeEventHandler<HTMLSelectElement> }) {
   const error = getError(state, name);
-  return <label className={formStyles.label}>{label}<select className={formStyles.input} defaultValue={values[name] ?? ""} name={name}><option value="">Select...</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
+  return <label className={formStyles.label}>{label}<select className={formStyles.input} defaultValue={values[name] ?? ""} name={name} onChange={onChange}><option value="">Select...</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
 }
 
 function TextareaField({ state, values, label, name, className = "" }: { state: UpdateApplicationFormState; values: NonNullable<UpdateApplicationFormState["values"]>; label: string; name: FieldName; className?: string }) {

@@ -58,6 +58,7 @@ export function toSheetRow(application: SheetApplication, sheetId: number, legac
     application.aiMatchClass ? matchLabels[application.aiMatchClass] : "",
     application.aiMatchPercentage === null ? "" : `${application.aiMatchPercentage}%`,
     application.aiMatchConfidence === null ? "" : `${application.aiMatchConfidence}%`,
+    application.stageContext ?? "",
   ];
 }
 

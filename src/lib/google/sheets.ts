@@ -23,7 +23,7 @@ export async function syncApplicationToGoogleSheet(application: Application) {
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!A${sheetRow}:AB${sheetRow}`,
+    range: `${config.sheetName}!A${sheetRow}:AC${sheetRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [toSheetRow(application, sheetId)],
@@ -48,7 +48,7 @@ export async function syncUpdatedApplicationToGoogleSheet(application: Applicati
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!A${foundRow.sheetRow}:AB${foundRow.sheetRow}`,
+    range: `${config.sheetName}!A${foundRow.sheetRow}:AC${foundRow.sheetRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [toSheetRow(application, sheetId, getLegacyManualMatchCells(foundRow.row))],
@@ -84,7 +84,7 @@ function getGoogleSheetsClient(config: ReturnType<typeof getGoogleSheetsConfig>)
 async function getExistingRows(sheets: ReturnType<typeof getGoogleSheetsClient>, config: ReturnType<typeof getGoogleSheetsConfig>) {
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!A:AB`,
+    range: `${config.sheetName}!A:AC`,
   });
 
   return response.data.values ?? [];
@@ -143,9 +143,9 @@ function getExistingSheetId(row: unknown[]) {
 async function ensureExtendedHeaders(sheets: ReturnType<typeof getGoogleSheetsClient>, config: ReturnType<typeof getGoogleSheetsConfig>) {
   await sheets.spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!Y1:AB1`,
+    range: `${config.sheetName}!Y1:AC1`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [["JD", "AI Match", "AI Match %", "AI Match Confidence"]] },
+    requestBody: { values: [["JD", "AI Match", "AI Match %", "AI Match Confidence", "Stage context"]] },
   });
 }
 
