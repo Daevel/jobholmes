@@ -1,15 +1,15 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, userProfiles } from "@/db/schema";
+import { buildAiMatchBreakdown } from "@/lib/ai/match-breakdown";
+import { serializeApplicationForAiContext } from "@/lib/ai/context-application";
 
 const APPLICATION_DETAIL_LIMIT = 100;
 const screeningStages = ["RECRUITER_SCREENING", "HIRING_MANAGER", "TECHNICAL", "CHALLENGE", "FINAL", "OFFER"] as const;
 const technicalStages = ["TECHNICAL", "CHALLENGE", "FINAL", "OFFER"] as const;
-const matchClasses = ["A_STRONG", "B_STRETCH", "C_LONG_SHOT"] as const;
 const stages = ["APPLICATION", "RECRUITER_SCREENING", "HIRING_MANAGER", "TECHNICAL", "CHALLENGE", "FINAL", "OFFER"] as const;
 const outcomes = ["PENDING", "IN_PROGRESS", "REJECTED", "WITHDRAWN", "OFFER"] as const;
 
-type MatchClass = (typeof matchClasses)[number];
 type Stage = (typeof stages)[number];
 type Outcome = (typeof outcomes)[number];
 
@@ -56,8 +56,6 @@ export async function buildJobSearchContext(userId: string) {
       workMode: applications.workMode,
       source: applications.source,
       cvVersion: applications.cvVersion,
-      userMatchClass: applications.userMatchClass,
-      userMatchPercentage: applications.userMatchPercentage,
       aiMatchClass: applications.aiMatchClass,
       aiMatchPercentage: applications.aiMatchPercentage,
       aiMatchConfidence: applications.aiMatchConfidence,
@@ -79,13 +77,13 @@ export async function buildJobSearchContext(userId: string) {
     .orderBy(desc(applications.appliedAt));
 
   const detailedApplications = allApplications.slice(0, APPLICATION_DETAIL_LIMIT).map((application) => ({
-    ...application,
+    ...serializeApplicationForAiContext(application),
     appliedAt: toDateOnly(application.appliedAt),
     responseAt: toDateOnly(application.responseAt),
   }));
 
   const funnel = buildBreakdown(allApplications);
-  const matchBreakdown = Object.fromEntries(matchClasses.map((matchClass) => [toMatchKey(matchClass), buildBreakdown(allApplications.filter((application) => application.userMatchClass === matchClass))])) as Record<"strong" | "stretch" | "longShot", Breakdown>;
+  const matchBreakdown = buildAiMatchBreakdown(allApplications);
   const stageBreakdown = Object.fromEntries(stages.map((stage) => [stage, allApplications.filter((application) => application.stage === stage).length])) as Record<Stage, number>;
   const outcomeBreakdown = Object.fromEntries(outcomes.map((outcome) => [outcome, allApplications.filter((application) => application.outcome === outcome).length])) as Record<Outcome, number>;
 
@@ -142,12 +140,6 @@ function toDateOnly(date: Date | null) {
   return date ? date.toISOString().slice(0, 10) : null;
 }
 
-function toMatchKey(matchClass: MatchClass) {
-  if (matchClass === "A_STRONG") return "strong";
-  if (matchClass === "B_STRETCH") return "stretch";
-  return "longShot";
-}
-
 export async function getAiFunnelSnapshot(userId: string) {
   const [stats] = await db
     .select({
@@ -155,7 +147,7 @@ export async function getAiFunnelSnapshot(userId: string) {
       screenings: sql<number>`count(*) filter (where ${applications.stage} in ('RECRUITER_SCREENING','HIRING_MANAGER','TECHNICAL','CHALLENGE','FINAL','OFFER'))`.mapWith(Number),
       technicals: sql<number>`count(*) filter (where ${applications.stage} in ('TECHNICAL','CHALLENGE','FINAL','OFFER'))`.mapWith(Number),
       offers: sql<number>`count(*) filter (where ${applications.outcome} = 'OFFER')`.mapWith(Number),
-      strongMatches: sql<number>`count(*) filter (where ${applications.userMatchClass} = 'A_STRONG')`.mapWith(Number),
+      strongMatches: sql<number>`count(*) filter (where ${applications.aiMatchClass} = 'A_STRONG')`.mapWith(Number),
       rejected: sql<number>`count(*) filter (where ${applications.outcome} = 'REJECTED')`.mapWith(Number),
     })
     .from(applications)

@@ -2,8 +2,9 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { applications } from "@/db/schema";
 import type { CreateApplicationInput, UpdateApplicationInput } from "@/lib/applications/schema";
-import { parseRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { getCvForUser } from "@/lib/cvs/service";
+import { getNextRequirementsAndGaps } from "@/lib/applications/requirements-preservation";
+export { getNextRequirementsAndGaps } from "@/lib/applications/requirements-preservation";
 export function listApplicationsForUser(userId:string){return db.select().from(applications).where(eq(applications.userId,userId)).orderBy(desc(applications.appliedAt));}
 export async function getApplicationForUser(userId:string,applicationId:string){const [row]=await db.select().from(applications).where(and(eq(applications.userId,userId),eq(applications.id,applicationId))).limit(1);return row??null;}
 
@@ -24,8 +25,6 @@ export type RecentApplication = Pick<
   | "company"
   | "role"
   | "country"
-  | "userMatchClass"
-  | "userMatchPercentage"
   | "aiMatchClass"
   | "aiMatchPercentage"
   | "outcome"
@@ -36,9 +35,9 @@ export async function getApplicationStatsForUser(userId: string): Promise<Applic
   const [stats] = await db
     .select({
       total: sql<number>`count(*)`.mapWith(Number),
-      strongMatches: sql<number>`count(*) filter (where ${applications.userMatchClass} = 'A_STRONG')`.mapWith(Number),
-      stretchMatches: sql<number>`count(*) filter (where ${applications.userMatchClass} = 'B_STRETCH')`.mapWith(Number),
-      longShotMatches: sql<number>`count(*) filter (where ${applications.userMatchClass} = 'C_LONG_SHOT')`.mapWith(Number),
+      strongMatches: sql<number>`count(*) filter (where ${applications.aiMatchClass} = 'A_STRONG')`.mapWith(Number),
+      stretchMatches: sql<number>`count(*) filter (where ${applications.aiMatchClass} = 'B_STRETCH')`.mapWith(Number),
+      longShotMatches: sql<number>`count(*) filter (where ${applications.aiMatchClass} = 'C_LONG_SHOT')`.mapWith(Number),
       rejected: sql<number>`count(*) filter (where ${applications.outcome} = 'REJECTED')`.mapWith(Number),
       inProgress: sql<number>`count(*) filter (where ${applications.outcome} = 'IN_PROGRESS')`.mapWith(Number),
       offers: sql<number>`count(*) filter (where ${applications.outcome} = 'OFFER')`.mapWith(Number),
@@ -57,8 +56,6 @@ export async function getRecentApplicationsForUser(userId: string, limit = 5): P
       company: applications.company,
       role: applications.role,
       country: applications.country,
-      userMatchClass: applications.userMatchClass,
-      userMatchPercentage: applications.userMatchPercentage,
       aiMatchClass: applications.aiMatchClass,
       aiMatchPercentage: applications.aiMatchPercentage,
       outcome: applications.outcome,
@@ -90,8 +87,6 @@ export async function createApplicationForUser(userId: string, input: CreateAppl
       cvDocumentId: selectedCv?.id ?? null,
       cvVersion: selectedCv?.name ?? null,
       jdText: input.jdText ?? null,
-      userMatchClass: input.userMatchClass ?? null,
-      userMatchPercentage: input.userMatchPercentage ?? null,
       workAuthorization: input.workAuthorization ?? null,
       sponsorshipRequired: input.sponsorshipRequired,
       salaryMin: input.salaryMin ?? null,
@@ -99,7 +94,6 @@ export async function createApplicationForUser(userId: string, input: CreateAppl
       currency: input.currency ?? null,
       outcome: "IN_PROGRESS",
       stage: "APPLICATION",
-      requirementsAndGaps: input.requirementsAndGaps ?? null,
       notes: input.notes ?? null,
     })
     .returning();
@@ -118,9 +112,7 @@ export async function updateApplicationForUser(userId: string, applicationId: st
   const normalizedJdText = input.jdText ?? null;
   const nextCvDocumentId = selectedCv?.id ?? null;
   const shouldInvalidateAiMatch = previous.jdText !== normalizedJdText || previous.cvDocumentId !== nextCvDocumentId;
-  const previousRequirementsAndGaps = parseRequirementsAndGaps(previous.requirementsAndGaps);
-  const parsedRequirementsAndGaps = parseRequirementsAndGaps(input.requirementsAndGaps);
-  const requirementsAndGaps = getNextRequirementsAndGaps({ shouldInvalidateAiMatch, previousValue: previous.requirementsAndGaps, previousParsed: previousRequirementsAndGaps, inputValue: input.requirementsAndGaps, inputParsed: parsedRequirementsAndGaps });
+  const requirementsAndGaps = getNextRequirementsAndGaps(shouldInvalidateAiMatch, previous.requirementsAndGaps);
 
   const [updated] = await db
     .update(applications)
@@ -137,8 +129,6 @@ export async function updateApplicationForUser(userId: string, applicationId: st
       cvDocumentId: nextCvDocumentId,
       cvVersion: selectedCv?.name ?? (input.cvDocumentId ? null : previous.cvVersion),
       jdText: normalizedJdText,
-      userMatchClass: input.userMatchClass ?? null,
-      userMatchPercentage: input.userMatchPercentage ?? null,
       aiMatchClass: shouldInvalidateAiMatch ? null : previous.aiMatchClass,
       aiMatchPercentage: shouldInvalidateAiMatch ? null : previous.aiMatchPercentage,
       aiMatchConfidence: shouldInvalidateAiMatch ? null : previous.aiMatchConfidence,
@@ -160,11 +150,4 @@ export async function updateApplicationForUser(userId: string, applicationId: st
     .returning();
 
   return { previous, updated };
-}
-
-function getNextRequirementsAndGaps({ shouldInvalidateAiMatch, previousValue, previousParsed, inputValue, inputParsed }: { shouldInvalidateAiMatch: boolean; previousValue: string | null; previousParsed: ReturnType<typeof parseRequirementsAndGaps>; inputValue?: string; inputParsed: ReturnType<typeof parseRequirementsAndGaps> }) {
-  if (shouldInvalidateAiMatch && previousParsed.kind === "structured") return inputParsed.kind === "legacy" ? inputValue ?? null : null;
-  if (!shouldInvalidateAiMatch && previousParsed.kind === "structured" && inputParsed.kind === "empty") return previousValue;
-  if (shouldInvalidateAiMatch && inputParsed.kind === "structured") return null;
-  return inputValue ?? null;
 }

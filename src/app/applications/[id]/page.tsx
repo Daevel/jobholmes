@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AiMatchBadge, AppShell, ButtonLink, DetailField, MatchBadge, OutcomeBadge, SectionCard, StageBadge } from "@/components/application-ui";
+import { AiMatchBadge, AppShell, ButtonLink, DetailField, OutcomeBadge, SectionCard, StageBadge } from "@/components/application-ui";
 import { parseRequirementsAndGaps, type ParsedRequirementsAndGaps, type RequirementsAndGapsPayload } from "@/lib/ai/requirements-and-gaps";
 import { formatDate, formatSalary, getDaysToResponse } from "@/lib/applications/display";
 import { getApplicationForUser } from "@/lib/applications/service";
@@ -27,7 +27,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="break-words text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{application.company}</h1>
-              <MatchBadge value={application.userMatchClass} />
               <AiMatchBadge percentage={application.aiMatchPercentage} value={application.aiMatchClass} />
             </div>
             <p className="mt-2 break-words text-base text-slate-600 sm:text-lg">{application.role}</p>
@@ -60,14 +59,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           </dl>
         </SectionCard>
 
-        <SectionCard className="p-5" title="Your assessment">
-          <dl className="grid gap-5 sm:grid-cols-2">
-            <DetailField label="Match classification"><MatchBadge value={application.userMatchClass} /></DetailField>
-            <DetailField label="Match percentage" value={application.userMatchPercentage === null ? "-" : `${application.userMatchPercentage}%`} />
-            <DetailField label="Requirements / gaps" value={legacyRequirementsAndGaps} wide wrap />
-          </dl>
-        </SectionCard>
-
         <SectionCard className="p-5" title="AI Match">
           <div className="space-y-5">
             <dl className="grid gap-5 sm:grid-cols-2">
@@ -78,6 +69,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
               <DetailField label="Last analyzed" value={formatDate(application.jdVerifiedAt)} />
             </dl>
             <AiMatchAnalysis parsed={requirementsAndGaps} />
+            {legacyRequirementsAndGaps ? <DetailField label="Legacy requirements/gaps notes" value={legacyRequirementsAndGaps} wide wrap /> : null}
             <AiMatchState application={application} />
           </div>
         </SectionCard>

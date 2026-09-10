@@ -58,6 +58,7 @@ export const applications = pgTable("applications", {
   cvVersion: varchar("cv_version", { length: 120 }),
   cvDocumentId: uuid("cv_document_id").references(() => cvDocuments.id, { onDelete: "set null" }),
   jdText: text("jd_text"),
+  // Deprecated compatibility fields retained for legacy imports and historical data only.
   userMatchClass: matchClassEnum("user_match_class"),
   userMatchPercentage: integer("user_match_percentage"),
   aiMatchClass: matchClassEnum("ai_match_class"),

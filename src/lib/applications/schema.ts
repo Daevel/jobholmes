@@ -8,7 +8,6 @@ const emptyToUndefined = (value: unknown) => (typeof value === "string" && value
 const optionalTrimmedString = (max: number) => z.preprocess(emptyToUndefined, z.string().trim().max(max).optional());
 const optionalText = z.preprocess(emptyToUndefined, z.string().trim().max(50000).optional());
 const optionalPositiveInteger = z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional());
-const optionalPercentage = z.preprocess(emptyToUndefined, z.coerce.number().int("Match percentage must be an integer").min(0).max(100).optional());
 const optionalUuid = z.preprocess(emptyToUndefined, z.string().uuid().optional());
 
 const sponsorshipRequired = z.preprocess(
@@ -32,22 +31,21 @@ const baseApplicationFields = z
     vacancyUrl: z.preprocess(emptyToUndefined, z.url("Enter a valid vacancy URL").optional()),
     cvDocumentId: optionalUuid,
     jdText: optionalText,
-    userMatchClass: z.preprocess(emptyToUndefined, z.enum(matchClasses).optional()),
-    userMatchPercentage: optionalPercentage,
     workAuthorization: optionalTrimmedString(120),
     sponsorshipRequired,
     salaryMin: optionalPositiveInteger,
     salaryMax: optionalPositiveInteger,
     currency: optionalTrimmedString(10),
-    requirementsAndGaps: optionalText,
     notes: optionalText,
   })
+  .strict();
+
+export const createApplicationSchema = baseApplicationFields
   .refine((input) => !input.salaryMin || !input.salaryMax || input.salaryMax >= input.salaryMin, {
     message: "Salary max must not be lower than salary min",
     path: ["salaryMax"],
   });
 
-export const createApplicationSchema = baseApplicationFields;
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
 
 export const updateApplicationSchema = baseApplicationFields
@@ -63,3 +61,24 @@ export const updateApplicationSchema = baseApplicationFields
   }));
 
 export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;
+
+const legacyManualMatchFields = z
+  .object({
+    userMatchClass: z.preprocess(emptyToUndefined, z.enum(matchClasses).optional()),
+    userMatchPercentage: z.preprocess(emptyToUndefined, z.coerce.number().int("Match percentage must be an integer").min(0).max(100).optional()),
+  })
+  .strict()
+  .extend({
+    cvVersion: optionalTrimmedString(120),
+    requirementsAndGaps: optionalText,
+    outcome: z.enum(applicationOutcomes),
+    stage: z.enum(applicationStages),
+  });
+
+export const legacyApplicationImportSchema = baseApplicationFields
+  .merge(legacyManualMatchFields)
+  .refine((input) => !input.salaryMin || !input.salaryMax || input.salaryMax >= input.salaryMin, {
+    message: "Salary max must not be lower than salary min",
+    path: ["salaryMax"],
+  });
+export type LegacyApplicationImportInput = z.infer<typeof legacyApplicationImportSchema>;

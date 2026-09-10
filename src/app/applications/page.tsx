@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { AiMatchBadge, AppShell, ApplicationMobileCard, ButtonLink, EmptyState, MatchBadge, OutcomeBadge, PageHeader, SectionCard, StageBadge } from "@/components/application-ui";
+import { AiMatchBadge, AppShell, ApplicationMobileCard, ButtonLink, EmptyState, OutcomeBadge, PageHeader, SectionCard, StageBadge } from "@/components/application-ui";
 import { formatDate, matchLabels, outcomeLabels, stageLabels } from "@/lib/applications/display";
+import { AI_MATCH_UNANALYZED, matchesAiMatchFilter, type AiMatchFilter } from "@/lib/applications/ai-match";
 import { listApplicationsForUser } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
 
@@ -17,12 +18,12 @@ export default async function ApplicationsPage({ searchParams }: { searchParams?
   const applications = await listApplicationsForUser(user.id);
   const selectedOutcome = filterOptions.find((option) => option.value === params?.outcome)?.value ?? null;
   const selectedStage = params?.stage && params.stage in stageLabels ? params.stage : "";
-  const selectedMatch = params?.match && params.match in matchLabels ? params.match : "";
+  const selectedMatch: AiMatchFilter = params?.match === AI_MATCH_UNANALYZED || (params?.match && params.match in matchLabels) ? params.match as AiMatchFilter : "";
   const query = params?.q?.trim().toLowerCase() ?? "";
   const visibleApplications = applications.filter((application) => {
     if (selectedOutcome && application.outcome !== selectedOutcome) return false;
     if (selectedStage && application.stage !== selectedStage) return false;
-    if (selectedMatch && application.userMatchClass !== selectedMatch) return false;
+    if (!matchesAiMatchFilter(application, selectedMatch)) return false;
     if (query && !`${application.company} ${application.role}`.toLowerCase().includes(query)) return false;
     return true;
   });
@@ -53,10 +54,11 @@ export default async function ApplicationsPage({ searchParams }: { searchParams?
           </select>
         </label>
         <label className="text-sm font-medium text-slate-700">
-          Match
+          AI Match
           <select className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100" defaultValue={selectedMatch} name="match">
-            <option value="">Any match</option>
+            <option value="">Any AI match</option>
             {Object.entries(matchLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            <option value={AI_MATCH_UNANALYZED}>Not analyzed</option>
           </select>
         </label>
         <div className="flex items-end gap-2">
@@ -80,13 +82,12 @@ function ApplicationsTable({ applications }: { applications: Awaited<ReturnType<
         <table className="w-full table-fixed border-collapse text-left text-sm">
           <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
             <tr>
-              <th className="w-[24%] px-3 py-3">Company</th>
+              <th className="w-[27%] px-3 py-3">Company</th>
               <th className="w-[12%] px-3 py-3">Country</th>
               <th className="w-[12%] px-3 py-3">Applied</th>
               <th className="w-[13%] px-3 py-3">Stage</th>
               <th className="w-[11%] px-3 py-3">Outcome</th>
-              <th className="w-[12%] px-3 py-3">Your Match</th>
-              <th className="w-[10%] px-3 py-3">AI Match</th>
+              <th className="w-[13%] px-3 py-3">AI Match</th>
               <th className="w-[6%] px-3 py-3">Actions</th>
             </tr>
           </thead>
@@ -103,7 +104,6 @@ function ApplicationsTable({ applications }: { applications: Awaited<ReturnType<
                 <td className="whitespace-nowrap px-3 py-4 text-slate-500">{formatDate(application.appliedAt)}</td>
                 <td className="px-3 py-4"><StageBadge value={application.stage} /></td>
                 <td className="px-3 py-4"><OutcomeBadge value={application.outcome} /></td>
-                <td className="px-3 py-4"><div className="flex flex-wrap items-center gap-2"><MatchBadge value={application.userMatchClass} />{application.userMatchPercentage !== null ? <span className="text-xs font-medium text-slate-500">{application.userMatchPercentage}%</span> : null}</div></td>
                 <td className="px-3 py-4"><AiMatchBadge percentage={application.aiMatchPercentage} value={application.aiMatchClass} /></td>
                 <td className="px-3 py-4"><Link className="text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" href={`/applications/${application.id}`}>View</Link></td>
               </tr>

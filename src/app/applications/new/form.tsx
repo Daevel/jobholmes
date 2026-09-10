@@ -5,12 +5,6 @@ import { createApplicationAction } from "@/app/applications/new/actions";
 import { initialCreateApplicationFormState, type CreateApplicationFormState } from "@/app/applications/new/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 
-const matchOptions = [
-  { value: "A_STRONG", label: "Strong" },
-  { value: "B_STRETCH", label: "Stretch" },
-  { value: "C_LONG_SHOT", label: "Long shot" },
-] as const;
-
 type FieldName = NonNullable<CreateApplicationFormState["values"]> extends Partial<Record<infer Key, string>> ? Key : never;
 type CvOption = { id: string; name: string };
 
@@ -44,15 +38,6 @@ export function NewApplicationForm({ today, cvs }: { today: string; cvs: CvOptio
         <div className="mt-5">
           <TextareaField label="Job description" name="jdText" placeholder="Paste the full job description here..." state={state} />
           <EnrichmentButton />
-        </div>
-      </section>
-
-      <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Match assessment</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <SelectField label="Match class" name="userMatchClass" options={matchOptions} state={state} />
-          <Field state={state} label="Match percentage" max="100" min="0" name="userMatchPercentage" placeholder="75" type="number" />
-          <TextareaField className="md:col-span-2" label="Requirements and gaps" name="requirementsAndGaps" placeholder="Key requirements, missing skills, concerns..." state={state} />
         </div>
       </section>
 
@@ -159,37 +144,6 @@ function Field({
     <label className={formStyles.label}>
       {label}{props.required ? <span className="text-red-600"> *</span> : null}
       <input className={formStyles.input} defaultValue={state.values?.[name] ?? defaultValue} name={name} {...props} />
-      {error ? <span className={formStyles.error}>{error}</span> : null}
-    </label>
-  );
-}
-
-function SelectField({
-  state,
-  label,
-  name,
-  options,
-  defaultValue = "",
-}: {
-  state: CreateApplicationFormState;
-  label: string;
-  name: FieldName;
-  options: readonly { value: string; label: string }[];
-  defaultValue?: string;
-}) {
-  const error = getError(state, name);
-
-  return (
-    <label className={formStyles.label}>
-      {label}
-      <select className={formStyles.input} defaultValue={state.values?.[name] ?? defaultValue} name={name}>
-        <option value="">Select...</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
       {error ? <span className={formStyles.error}>{error}</span> : null}
     </label>
   );

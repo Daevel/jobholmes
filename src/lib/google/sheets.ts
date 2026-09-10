@@ -1,35 +1,11 @@
 import "server-only";
 
 import { google } from "googleapis";
-import type { applications } from "@/db/schema";
+import { getLegacyManualMatchCells, toSheetRow, type SheetApplication } from "@/lib/google/sheets-row";
 
-type Application = typeof applications.$inferSelect;
+type Application = SheetApplication;
 
 const defaultSheetName = "Foglio1";
-
-const matchLabels = {
-  A_STRONG: "A - Strong",
-  B_STRETCH: "B - Stretch",
-  C_LONG_SHOT: "C - Long shot",
-} as const;
-
-const outcomeLabels = {
-  PENDING: "Pending",
-  IN_PROGRESS: "In progress",
-  REJECTED: "Rejected",
-  WITHDRAWN: "Withdrawn",
-  OFFER: "Offer",
-} as const;
-
-const stageLabels = {
-  APPLICATION: "Application",
-  RECRUITER_SCREENING: "Recruiter screening",
-  HIRING_MANAGER: "Hiring manager",
-  TECHNICAL: "Technical",
-  CHALLENGE: "Challenge",
-  FINAL: "Final",
-  OFFER: "Offer",
-} as const;
 
 export async function syncApplicationToGoogleSheet(application: Application) {
   const config = getGoogleSheetsConfig();
@@ -75,7 +51,7 @@ export async function syncUpdatedApplicationToGoogleSheet(application: Applicati
     range: `${config.sheetName}!A${foundRow.sheetRow}:AB${foundRow.sheetRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [toSheetRow(application, sheetId)],
+      values: [toSheetRow(application, sheetId, getLegacyManualMatchCells(foundRow.row))],
     },
   });
 
@@ -164,39 +140,6 @@ function getExistingSheetId(row: unknown[]) {
   return Number.isInteger(value) && value > 0 ? value : null;
 }
 
-function toSheetRow(application: Application, sheetId: number) {
-  return [
-    sheetId,
-    formatDate(application.appliedAt),
-    application.company,
-    application.role,
-    application.roleCategory ?? "",
-    application.seniority ?? "",
-    application.country ?? "",
-    application.workMode ?? "",
-    application.source ?? "",
-    application.vacancyUrl ?? "",
-    application.cvVersion ?? "",
-    application.userMatchClass ? matchLabels[application.userMatchClass] : "",
-    application.userMatchPercentage === null ? "" : `${application.userMatchPercentage}%`,
-    application.workAuthorization ?? "",
-    application.salaryMin ?? "",
-    application.salaryMax ?? "",
-    application.currency ?? "",
-    outcomeLabels[application.outcome],
-    stageLabels[application.stage],
-    application.responseAt ? formatDate(application.responseAt) : "",
-    getDaysToResponse(application),
-    application.rejectionReason ?? "",
-    application.requirementsAndGaps ?? "",
-    application.notes ?? "",
-    truncateForSheet(application.jdText ?? ""),
-    application.aiMatchClass ? matchLabels[application.aiMatchClass] : "",
-    application.aiMatchPercentage === null ? "" : `${application.aiMatchPercentage}%`,
-    application.aiMatchConfidence === null ? "" : `${application.aiMatchConfidence}%`,
-  ];
-}
-
 async function ensureExtendedHeaders(sheets: ReturnType<typeof getGoogleSheetsClient>, config: ReturnType<typeof getGoogleSheetsConfig>) {
   await sheets.spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
@@ -204,16 +147,6 @@ async function ensureExtendedHeaders(sheets: ReturnType<typeof getGoogleSheetsCl
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [["JD", "AI Match", "AI Match %", "AI Match Confidence"]] },
   });
-}
-
-function truncateForSheet(value: string) {
-  return value.length > 45000 ? `${value.slice(0, 45000)}\n[Truncated in Google Sheet; full JD is stored in JobHolmes.]` : value;
-}
-
-function getDaysToResponse(application: Application) {
-  if (!application.responseAt) return "";
-  const millisecondsPerDay = 1000 * 60 * 60 * 24;
-  return Math.max(0, Math.round((application.responseAt.getTime() - application.appliedAt.getTime()) / millisecondsPerDay));
 }
 
 function formatDate(date: Date) {

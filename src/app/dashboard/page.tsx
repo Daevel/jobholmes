@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Check, CircleGauge, CircleX, TrendingUp } from "lucide-react";
-import { AppShell, ApplicationMobileCard, ButtonLink, EmptyState, MatchBadge, MetricCard, OutcomeBadge, PageHeader, SecondaryMetric, SectionCard, StageBadge } from "@/components/application-ui";
+import { AiMatchBadge, AppShell, ApplicationMobileCard, ButtonLink, EmptyState, MetricCard, OutcomeBadge, PageHeader, SecondaryMetric, SectionCard, StageBadge } from "@/components/application-ui";
 import { formatDate } from "@/lib/applications/display";
 import { getApplicationStatsForUser, getRecentApplicationsForUser, type ApplicationStats, type RecentApplication } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
@@ -36,7 +36,7 @@ function PrimaryMetrics({ stats }: { stats: ApplicationStats }) {
   const kpis = [
     { label: "Total applications", value: stats.total, tone: "blue", icon: <TrendingUp aria-hidden="true" className="h-4 w-4" /> },
     { label: "In progress", value: stats.inProgress, tone: "blue", icon: <CircleGauge aria-hidden="true" className="h-4 w-4" /> },
-    { label: "Strong matches", value: stats.strongMatches, tone: "green", icon: <Check aria-hidden="true" className="h-4 w-4" /> },
+    { label: "Strong AI matches", value: stats.strongMatches, tone: "green", icon: <Check aria-hidden="true" className="h-4 w-4" /> },
     { label: "Rejected", value: stats.rejected, tone: "red", icon: <CircleX aria-hidden="true" className="h-4 w-4" /> },
   ] as const;
 
@@ -50,8 +50,8 @@ function PrimaryMetrics({ stats }: { stats: ApplicationStats }) {
 function SecondaryMetrics({ stats }: { stats: ApplicationStats }) {
   return (
     <section aria-label="Secondary dashboard metrics" className="grid gap-3 sm:grid-cols-3">
-      <SecondaryMetric label="Stretch matches" tone="purple" value={stats.stretchMatches} />
-      <SecondaryMetric label="Long shot" tone="orange" value={stats.longShotMatches} />
+      <SecondaryMetric label="Stretch AI matches" tone="purple" value={stats.stretchMatches} />
+      <SecondaryMetric label="AI long shots" tone="orange" value={stats.longShotMatches} />
       <SecondaryMetric label="Offers" tone="green" value={stats.offers} />
     </section>
   );
@@ -69,7 +69,7 @@ function RecentApplications({ applications }: { applications: RecentApplication[
               <th className="w-[13%] px-5 py-3">Applied</th>
               <th className="w-[15%] px-5 py-3">Stage</th>
               <th className="w-[12%] px-5 py-3">Outcome</th>
-              <th className="w-[12%] px-5 py-3">Match</th>
+              <th className="w-[12%] px-5 py-3">AI Match</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -80,7 +80,7 @@ function RecentApplications({ applications }: { applications: RecentApplication[
                 <td className="px-5 py-4 text-slate-500">{formatDate(application.appliedAt)}</td>
                 <td className="px-5 py-4"><StageBadge value={application.stage} /></td>
                 <td className="px-5 py-4"><OutcomeBadge value={application.outcome} /></td>
-                <td className="px-5 py-4"><MatchBadge value={application.userMatchClass} /></td>
+                <td className="px-5 py-4"><AiMatchBadge percentage={application.aiMatchPercentage} value={application.aiMatchClass} /></td>
               </tr>
             ))}
           </tbody>

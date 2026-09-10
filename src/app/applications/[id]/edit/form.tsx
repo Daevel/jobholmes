@@ -5,12 +5,6 @@ import { updateApplicationAction } from "@/app/applications/[id]/edit/actions";
 import { initialUpdateApplicationFormState, type UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 
-const matchOptions = [
-  { value: "A_STRONG", label: "Strong" },
-  { value: "B_STRETCH", label: "Stretch" },
-  { value: "C_LONG_SHOT", label: "Long shot" },
-] as const;
-
 const outcomeOptions = [
   { value: "PENDING", label: "Pending" },
   { value: "IN_PROGRESS", label: "In progress" },
@@ -64,15 +58,6 @@ export function EditApplicationForm({ applicationId, defaults, cvs }: { applicat
         <div className="mt-5">
           <TextareaField label="Job description" name="jdText" state={state} values={values} />
           <EnrichmentButton />
-        </div>
-      </section>
-
-      <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Match assessment</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <SelectField label="Match class" name="userMatchClass" options={matchOptions} state={state} values={values} />
-          <Field label="Match percentage" max="100" min="0" name="userMatchPercentage" state={state} type="number" values={values} />
-          <TextareaField className="md:col-span-2" label="Requirements and gaps" name="requirementsAndGaps" state={state} values={values} />
         </div>
       </section>
 

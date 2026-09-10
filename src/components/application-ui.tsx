@@ -136,11 +136,6 @@ export function Badge({ children, tone }: { children: React.ReactNode; tone: Bad
   return <span className={`inline-flex max-w-full items-center whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium leading-none ${badgeClasses[tone]}`}>{children}</span>;
 }
 
-export function MatchBadge({ value }: { value: Application["userMatchClass"] }) {
-  if (!value) return <Badge tone="neutral">Not set</Badge>;
-  return <Badge tone={matchTones[value]}>{matchLabels[value]}</Badge>;
-}
-
 export function AiMatchBadge({ value, percentage }: { value: Application["aiMatchClass"]; percentage: Application["aiMatchPercentage"] }) {
   if (!value) return <Badge tone="neutral">Not analyzed</Badge>;
   if (percentage === null) return <Badge tone={matchTones[value]}>{matchLabels[value]}</Badge>;
@@ -155,7 +150,9 @@ export function StageBadge({ value }: { value: Application["stage"] }) {
   return <Badge tone="blue">{stageLabels[value]}</Badge>;
 }
 
-export function ApplicationMobileCard({ application }: { application: Pick<Application, "id" | "company" | "role" | "country" | "appliedAt" | "userMatchClass" | "userMatchPercentage" | "aiMatchClass" | "aiMatchPercentage" | "outcome" | "stage"> }) {
+export type ApplicationMobileCardApplication = Pick<Application, "id" | "company" | "role" | "country" | "appliedAt" | "aiMatchClass" | "aiMatchPercentage" | "outcome" | "stage">;
+
+export function ApplicationMobileCard({ application }: { application: ApplicationMobileCardApplication }) {
   return (
     <Link className="block rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition hover:border-indigo-200 hover:bg-indigo-50/20 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2" href={`/applications/${application.id}`}>
       <div className="flex items-start justify-between gap-3">
@@ -171,8 +168,7 @@ export function ApplicationMobileCard({ application }: { application: Pick<Appli
       </dl>
       <div className="mt-4 flex flex-wrap gap-2">
         <StageBadge value={application.stage} />
-        <Badge tone="neutral">Your match: {application.userMatchClass ? matchLabels[application.userMatchClass] : "Not set"}{application.userMatchPercentage !== null ? ` · ${application.userMatchPercentage}%` : ""}</Badge>
-        <Badge tone={application.aiMatchClass ? matchTones[application.aiMatchClass] : "neutral"}>AI match: {application.aiMatchClass && application.aiMatchPercentage !== null ? `${matchLabels[application.aiMatchClass]} · ${application.aiMatchPercentage}%` : "Not analyzed"}</Badge>
+        <Badge tone={application.aiMatchClass ? matchTones[application.aiMatchClass] : "neutral"}>AI Match: {application.aiMatchClass && application.aiMatchPercentage !== null ? `${matchLabels[application.aiMatchClass]} · ${application.aiMatchPercentage}%` : "Not analyzed"}</Badge>
       </div>
     </Link>
   );

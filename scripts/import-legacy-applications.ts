@@ -1,25 +1,12 @@
 import "dotenv/config";
 
 import { and, eq } from "drizzle-orm";
-import { z } from "zod";
 import { db } from "../src/db";
 import { applications, users } from "../src/db/schema";
-import { createApplicationSchema } from "../src/lib/applications/schema";
+import { legacyApplicationImportSchema, type LegacyApplicationImportInput } from "../src/lib/applications/schema";
+import { legacyManualMatchValues } from "../src/lib/applications/legacy";
 
-const applicationOutcomes = ["PENDING", "IN_PROGRESS", "REJECTED", "WITHDRAWN", "OFFER"] as const;
-const applicationStages = ["APPLICATION", "RECRUITER_SCREENING", "HIRING_MANAGER", "TECHNICAL", "CHALLENGE", "FINAL", "OFFER"] as const;
-
-const emptyToUndefined = (value: unknown) => (typeof value === "string" && value.trim() === "" ? undefined : value);
-
-const legacyOnlyFieldsSchema = z.object({
-  cvVersion: z.preprocess(emptyToUndefined, z.string().trim().max(120).optional()),
-  outcome: z.enum(applicationOutcomes),
-  stage: z.enum(applicationStages),
-});
-
-const legacyApplicationInputSchema = createApplicationSchema.and(legacyOnlyFieldsSchema);
-
-type LegacyApplicationInput = z.infer<typeof legacyApplicationInputSchema>;
+type LegacyApplicationInput = LegacyApplicationImportInput;
 
 type LegacyApplication = {
   input: LegacyApplicationInput;
@@ -222,8 +209,7 @@ async function main() {
         source: input.source ?? null,
         vacancyUrl: input.vacancyUrl ?? null,
         cvVersion: input.cvVersion ?? null,
-        userMatchClass: input.userMatchClass ?? null,
-        userMatchPercentage: input.userMatchPercentage ?? null,
+        ...legacyManualMatchValues(input),
         workAuthorization: input.workAuthorization ?? null,
         sponsorshipRequired: input.sponsorshipRequired,
         salaryMin: input.salaryMin ?? null,
@@ -251,7 +237,7 @@ async function main() {
 }
 
 function parseLegacyApplication(input: Record<string, unknown>) {
-  return legacyApplicationInputSchema.parse(input);
+  return legacyApplicationImportSchema.parse(input);
 }
 
 function parseDate(value: string) {

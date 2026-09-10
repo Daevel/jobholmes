@@ -29,8 +29,6 @@ export default async function EditApplicationPage({ params }: { params: Promise<
     cvDocumentId: application.cvDocumentId ?? "",
     legacyCvVersion: application.cvDocumentId ? "" : application.cvVersion ?? "",
     jdText: application.jdText ?? "",
-    userMatchClass: application.userMatchClass ?? "",
-    userMatchPercentage: application.userMatchPercentage === null ? "" : String(application.userMatchPercentage),
     workAuthorization: application.workAuthorization ?? "",
     sponsorshipRequired: application.sponsorshipRequired === null ? "unknown" : application.sponsorshipRequired ? "true" : "false",
     salaryMin: application.salaryMin === null ? "" : String(application.salaryMin),

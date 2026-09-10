@@ -230,7 +230,7 @@ function SnapshotCards({ snapshot }: { snapshot: AiFunnelSnapshot }) {
     { label: "Screening rate", value: `${snapshot.screeningRate}%` },
     { label: "Technical rate", value: `${snapshot.technicalRate}%` },
     { label: "Offers", value: snapshot.offers.toString() },
-    { label: "Strong matches", value: snapshot.strongMatches.toString() },
+    { label: "Strong AI matches", value: snapshot.strongMatches.toString() },
     { label: "Rejected", value: snapshot.rejected.toString() },
   ];
 
