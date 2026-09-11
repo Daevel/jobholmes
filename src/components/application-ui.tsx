@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { BriefcaseBusiness, FileText, LayoutDashboard, Plus, Sparkles, type LucideIcon } from "lucide-react";
-import { signOut } from "@/auth";
+import { BriefcaseBusiness, FileText, LayoutDashboard, Plus, Sparkles, Target, type LucideIcon } from "lucide-react";
+import { signOutAction } from "@/lib/auth-actions";
 import type { applications } from "@/db/schema";
 import { formatDate, matchLabels, outcomeLabels, stageLabels } from "@/lib/applications/display";
 
@@ -11,6 +11,7 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, mobile: true },
   { label: "Applications", href: "/applications", icon: BriefcaseBusiness, mobile: true },
   { label: "AI Analyst", href: "/ai", icon: Sparkles, mobile: true },
+  { label: "Job Fit", href: "/job-fit", icon: Target, mobile: false },
   { label: "CVs", href: "/cvs", icon: FileText, mobile: true },
   { label: "Add application", href: "/applications/new", icon: Plus, mobile: false },
 ];
@@ -216,13 +217,7 @@ function DesktopSidebar({ accountLabel, currentPath }: { accountLabel: string; c
           <UserInitial accountLabel={accountLabel} />
           <p className="truncate text-sm text-slate-600">{accountLabel}</p>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut();
-          }}
-          className="mt-3"
-        >
+        <form action={signOutAction} className="mt-3">
           <Button variant="ghost" type="submit">Sign out</Button>
         </form>
       </div>

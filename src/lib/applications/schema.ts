@@ -18,7 +18,7 @@ const sponsorshipRequired = z.preprocess(
   }),
 );
 
-const baseApplicationFields = z
+export const baseApplicationFields = z
   .object({
     appliedAt: z.coerce.date({ error: "Applied date is required" }),
     company: z.string().trim().min(1, "Company is required").max(255),

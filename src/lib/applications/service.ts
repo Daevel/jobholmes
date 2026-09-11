@@ -93,6 +93,49 @@ export async function getRecentApplicationsForUser(userId: string, limit = 5): P
     .limit(limit);
 }
 
+type BaseApplicationValuesInput = {
+  appliedAt: Date;
+  company: string;
+  role: string;
+  roleCategory?: string;
+  seniority?: string;
+  country?: string;
+  workMode?: string;
+  source?: string;
+  vacancyUrl?: string;
+  workAuthorization?: string;
+  sponsorshipRequired: boolean | null;
+  salaryMin?: number;
+  salaryMax?: number;
+  currency?: string;
+  stageContext?: string;
+  notes?: string;
+};
+
+function buildBaseApplicationValues(userId: string, input: BaseApplicationValuesInput) {
+  return {
+    userId,
+    appliedAt: input.appliedAt,
+    company: input.company,
+    role: input.role,
+    roleCategory: input.roleCategory ?? null,
+    seniority: input.seniority ?? null,
+    country: input.country ?? null,
+    workMode: input.workMode ?? null,
+    source: input.source ?? null,
+    vacancyUrl: input.vacancyUrl ?? null,
+    workAuthorization: input.workAuthorization ?? null,
+    sponsorshipRequired: input.sponsorshipRequired,
+    salaryMin: input.salaryMin ?? null,
+    salaryMax: input.salaryMax ?? null,
+    currency: input.currency ?? null,
+    outcome: "IN_PROGRESS" as const,
+    stage: "APPLICATION" as const,
+    stageContext: input.stageContext ?? null,
+    notes: input.notes ?? null,
+  };
+}
+
 export async function createApplicationForUser(userId: string, input: CreateApplicationInput) {
   const selectedCv = input.cvDocumentId ? await getCvForUser(userId, input.cvDocumentId) : null;
   if (input.cvDocumentId && !selectedCv) throw new Error("CV_NOT_FOUND");
@@ -100,28 +143,46 @@ export async function createApplicationForUser(userId: string, input: CreateAppl
   const [created] = await db
     .insert(applications)
     .values({
-      userId,
-      appliedAt: input.appliedAt,
-      company: input.company,
-      role: input.role,
-      roleCategory: input.roleCategory ?? null,
-      seniority: input.seniority ?? null,
-      country: input.country ?? null,
-      workMode: input.workMode ?? null,
-      source: input.source ?? null,
-      vacancyUrl: input.vacancyUrl ?? null,
+      ...buildBaseApplicationValues(userId, input),
       cvDocumentId: selectedCv?.id ?? null,
       cvVersion: selectedCv?.name ?? null,
       jdText: input.jdText ?? null,
-      workAuthorization: input.workAuthorization ?? null,
-      sponsorshipRequired: input.sponsorshipRequired,
-      salaryMin: input.salaryMin ?? null,
-      salaryMax: input.salaryMax ?? null,
-      currency: input.currency ?? null,
-      outcome: "IN_PROGRESS",
-      stage: "APPLICATION",
-      stageContext: input.stageContext ?? null,
-      notes: input.notes ?? null,
+    })
+    .returning();
+
+  return created;
+}
+
+export type CreateApplicationFromVerifiedJobFitInput = Omit<CreateApplicationInput, "cvDocumentId" | "jdText"> & {
+  cvDocumentId: string;
+  jdText: string;
+  aiMatchClass: typeof applications.$inferSelect.aiMatchClass;
+  aiMatchPercentage: number | null;
+  aiMatchConfidence: number | null;
+  requirementsAndGaps: string;
+};
+
+/**
+ * Creates an application from a Job Fit preview result whose match data has already been
+ * verified (see /api/job-fit/confirm). Deliberately separate from createApplicationForUser /
+ * createApplicationSchema, which must keep rejecting client-supplied match values.
+ */
+export async function createApplicationFromVerifiedJobFit(userId: string, input: CreateApplicationFromVerifiedJobFitInput) {
+  const selectedCv = await getCvForUser(userId, input.cvDocumentId);
+  if (!selectedCv) throw new Error("CV_NOT_FOUND");
+
+  const [created] = await db
+    .insert(applications)
+    .values({
+      ...buildBaseApplicationValues(userId, input),
+      cvDocumentId: selectedCv.id,
+      cvVersion: selectedCv.name,
+      jdText: input.jdText,
+      aiMatchClass: input.aiMatchClass,
+      aiMatchPercentage: input.aiMatchPercentage,
+      aiMatchConfidence: input.aiMatchConfidence,
+      requirementsAndGaps: input.requirementsAndGaps,
+      jdVerifiedAt: new Date(),
     })
     .returning();
 
