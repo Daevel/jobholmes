@@ -100,6 +100,8 @@ type BaseApplicationValuesInput = {
   roleCategory?: string;
   seniority?: string;
   country?: string;
+  city?: string;
+  remoteOnly: boolean;
   workMode?: string;
   source?: string;
   vacancyUrl?: string;
@@ -121,6 +123,8 @@ function buildBaseApplicationValues(userId: string, input: BaseApplicationValues
     roleCategory: input.roleCategory ?? null,
     seniority: input.seniority ?? null,
     country: input.country ?? null,
+    city: input.city ?? null,
+    remoteOnly: input.remoteOnly,
     workMode: input.workMode ?? null,
     source: input.source ?? null,
     vacancyUrl: input.vacancyUrl ?? null,
@@ -212,6 +216,8 @@ export async function updateApplicationForUser(userId: string, applicationId: st
       roleCategory: input.roleCategory ?? null,
       seniority: input.seniority ?? null,
       country: input.country ?? null,
+      city: input.city ?? null,
+      remoteOnly: input.remoteOnly,
       workMode: input.workMode ?? null,
       source: input.source ?? null,
       vacancyUrl: input.vacancyUrl ?? null,

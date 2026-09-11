@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { createApplicationAction } from "@/app/applications/new/actions";
 import { initialCreateApplicationFormState, type CreateApplicationFormState } from "@/app/applications/new/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
@@ -12,6 +12,7 @@ type CvOption = { id: string; name: string };
 export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs: CvOption[]; sources: string[] }) {
   const [state, formAction, pending] = useActionState(createApplicationAction, initialCreateApplicationFormState);
   const sourceFieldRef = useRef<SourceFieldHandle>(null);
+  const [remoteOnly, setRemoteOnly] = useState(false);
 
   return (
     <form action={formAction} className="space-y-5" id="application-form">
@@ -24,7 +25,9 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
           <Field state={state} label="Company" name="company" required placeholder="Acme GmbH" />
           <Field state={state} label="Role" name="role" required placeholder="Senior Frontend Engineer" />
           <Field state={state} label="Applied date" name="appliedAt" required type="date" defaultValue={today} />
-          <Field state={state} label="Country" name="country" placeholder="Germany" />
+          <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
+          {!remoteOnly ? <Field state={state} label="Country" name="country" required placeholder="Germany" /> : null}
+          {!remoteOnly ? <Field state={state} label="City" name="city" placeholder="Berlin" /> : null}
           <Field state={state} label="Work mode" name="workMode" placeholder="Remote" />
           <SourceField defaultValue={state.values?.source} ref={sourceFieldRef} sources={sources} />
           <Field state={state} label="Vacancy URL" name="vacancyUrl" placeholder="https://example.com/jobs/123" type="url" />
@@ -39,7 +42,12 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
         <p className={formStyles.sectionDescription}>Paste the job description so JobHolmes can extract role details and compare the position against your selected CV.</p>
         <div className="mt-5">
           <TextareaField label="Job description" name="jdText" placeholder="Paste the full job description here..." state={state} />
-          <EnrichmentButton sourceFieldRef={sourceFieldRef} />
+          <EnrichmentButton
+            onRemoteOnlySuggestion={() => {
+              if (!remoteOnly) setRemoteOnly(true);
+            }}
+            sourceFieldRef={sourceFieldRef}
+          />
         </div>
       </section>
 
@@ -111,7 +119,22 @@ function SponsorshipField({ state }: { state: CreateApplicationFormState }) {
   );
 }
 
-function EnrichmentButton({ sourceFieldRef }: { sourceFieldRef: React.RefObject<SourceFieldHandle | null> }) {
+function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 self-end pb-2.5 text-sm font-medium text-slate-700">
+      <input
+        checked={checked}
+        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500"
+        name="remoteOnly"
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      Remote only
+    </label>
+  );
+}
+
+function EnrichmentButton({ sourceFieldRef, onRemoteOnlySuggestion }: { sourceFieldRef: React.RefObject<SourceFieldHandle | null>; onRemoteOnlySuggestion: () => void }) {
   async function extractDetails() {
     const form = document.getElementById("application-form");
     if (!(form instanceof HTMLFormElement)) return;
@@ -123,11 +146,15 @@ function EnrichmentButton({ sourceFieldRef }: { sourceFieldRef: React.RefObject<
       body: JSON.stringify(Object.fromEntries(formData.entries())),
     });
     if (!response.ok) return;
-    const data = await response.json() as { suggestions: Record<string, string | number | null> };
+    const data = await response.json() as { suggestions: Record<string, string | number | boolean | null> };
     for (const [name, value] of Object.entries(data.suggestions)) {
       if (value === null || value === undefined || value === "") continue;
       if (name === "source") {
         sourceFieldRef.current?.applySuggestion(String(value));
+        continue;
+      }
+      if (name === "remoteOnly") {
+        if (value === true) onRemoteOnlySuggestion();
         continue;
       }
       const field = form.elements.namedItem(name);

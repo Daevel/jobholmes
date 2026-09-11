@@ -18,6 +18,14 @@ const sponsorshipRequired = z.preprocess(
   }),
 );
 
+// Checkbox input: present as "on" (HTML form) or a real boolean (JSON body) when checked,
+// absent/anything else when unchecked. Always resolves to a boolean, never undefined.
+const checkboxBoolean = z.preprocess((value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") return value === "on" || value === "true";
+  return false;
+}, z.boolean());
+
 export const baseApplicationFields = z
   .object({
     appliedAt: z.coerce.date({ error: "Applied date is required" }),
@@ -26,6 +34,8 @@ export const baseApplicationFields = z
     roleCategory: optionalTrimmedString(120),
     seniority: optionalTrimmedString(80),
     country: optionalTrimmedString(120),
+    city: optionalTrimmedString(120),
+    remoteOnly: checkboxBoolean,
     workMode: optionalTrimmedString(40),
     source: optionalTrimmedString(80),
     vacancyUrl: z.preprocess(emptyToUndefined, z.url("Enter a valid vacancy URL").optional()),
@@ -41,11 +51,35 @@ export const baseApplicationFields = z
   })
   .strict();
 
+/**
+ * Shared cross-field rule for country/city/remoteOnly, called from every schema that creates or
+ * saves an application (create, update, and the Job Fit confirm schema) so the rule lives in one
+ * place. Country is required unless the application is marked remote-only.
+ */
+export function validateApplicationLocationFields(data: { country?: string; city?: string; remoteOnly: boolean }, ctx: z.RefinementCtx) {
+  if (!data.remoteOnly && !data.country) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Country is required unless Remote only is selected",
+      path: ["country"],
+    });
+  }
+}
+
+// Remote-only applications have no specific location: silently clear country/city rather than
+// treating a client that still sent them alongside remoteOnly=true as a validation error - the UI
+// is expected to hide those fields itself, so this is a server-side safety net, not the normal path.
+export function clearLocationWhenRemoteOnly<T extends { country?: string; city?: string; remoteOnly: boolean }>(input: T) {
+  return input.remoteOnly ? { ...input, country: undefined, city: undefined } : input;
+}
+
 export const createApplicationSchema = baseApplicationFields
   .refine((input) => !input.salaryMin || !input.salaryMax || input.salaryMax >= input.salaryMin, {
     message: "Salary max must not be lower than salary min",
     path: ["salaryMax"],
-  });
+  })
+  .superRefine(validateApplicationLocationFields)
+  .transform(clearLocationWhenRemoteOnly);
 
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
 
@@ -56,7 +90,8 @@ export const updateApplicationSchema = baseApplicationFields
     responseAt: z.preprocess(emptyToUndefined, z.coerce.date().optional()),
     rejectionReason: optionalText,
   })
-  .transform((input) => ({
+  .superRefine(validateApplicationLocationFields)
+  .transform((input) => clearLocationWhenRemoteOnly({
     ...input,
     outcome: input.stage === "OFFER" ? "OFFER" : input.outcome,
   }));

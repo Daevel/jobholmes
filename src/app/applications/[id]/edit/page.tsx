@@ -24,6 +24,8 @@ export default async function EditApplicationPage({ params }: { params: Promise<
     roleCategory: application.roleCategory ?? "",
     seniority: application.seniority ?? "",
     country: application.country ?? "",
+    city: application.city ?? "",
+    remoteOnly: application.remoteOnly ? "true" : "false",
     workMode: application.workMode ?? "",
     source: application.source ?? "",
     vacancyUrl: application.vacancyUrl ?? "",

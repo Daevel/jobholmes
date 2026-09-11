@@ -48,6 +48,12 @@ export function formatSalary(application: Pick<Application, "salaryMin" | "salar
   return `Up to ${application.salaryMax?.toLocaleString()}${currency}`;
 }
 
+export function formatApplicationLocation(application: Pick<Application, "remoteOnly" | "city" | "country">) {
+  if (application.remoteOnly) return "Remote only";
+  if (application.city && application.country) return `${application.city}, ${application.country}`;
+  return application.country;
+}
+
 export function getDaysToResponse(application: Pick<Application, "appliedAt" | "responseAt">) {
   if (!application.responseAt) return null;
   const millisecondsPerDay = 1000 * 60 * 60 * 24;

@@ -52,6 +52,8 @@ export const applications = pgTable("applications", {
   roleCategory: varchar("role_category", { length: 120 }),
   seniority: varchar("seniority", { length: 80 }),
   country: varchar("country", { length: 120 }),
+  city: varchar("city", { length: 120 }),
+  remoteOnly: boolean("remote_only").default(false).notNull(),
   workMode: varchar("work_mode", { length: 40 }),
   source: varchar("source", { length: 80 }),
   vacancyUrl: text("vacancy_url"),

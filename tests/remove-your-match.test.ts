@@ -74,8 +74,8 @@ test("active create and edit inputs reject manual match values", () => {
 
 test("create and update inputs retain stage context", () => {
   const stageContext = "Recruiter confirmed the screening format.";
-  const created = createApplicationSchema.parse({ ...activeInput, stageContext });
-  const updated = updateApplicationSchema.parse({ ...activeInput, stageContext, outcome: "IN_PROGRESS", stage: "RECRUITER_SCREENING" });
+  const created = createApplicationSchema.parse({ ...activeInput, stageContext, country: "Germany" });
+  const updated = updateApplicationSchema.parse({ ...activeInput, stageContext, country: "Germany", outcome: "IN_PROGRESS", stage: "RECRUITER_SCREENING" });
 
   assert.equal(created.stageContext, stageContext);
   assert.equal(updated.stageContext, stageContext);

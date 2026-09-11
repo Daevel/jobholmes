@@ -43,6 +43,7 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [confirmPending, setConfirmPending] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [remoteOnly, setRemoteOnly] = useState(false);
 
   const isStale = preview !== null && (preview.jdText !== jdText || preview.cvDocumentId !== cvDocumentId);
 
@@ -175,7 +176,9 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
               <TextField label="Company" name="company" placeholder="Acme GmbH" required />
               <TextField label="Role" name="role" placeholder="Senior Frontend Engineer" required />
               <TextField defaultValue={today} label="Applied date" name="appliedAt" required type="date" />
-              <TextField label="Country" name="country" placeholder="Germany" />
+              <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
+              {!remoteOnly ? <TextField label="Country" name="country" placeholder="Germany" required /> : null}
+              {!remoteOnly ? <TextField label="City" name="city" placeholder="Berlin" /> : null}
               <TextField label="Work mode" name="workMode" placeholder="Remote" />
               <SourceField sources={sources} />
               <TextField label="Vacancy URL" name="vacancyUrl" placeholder="https://example.com/jobs/123" type="url" />
@@ -205,6 +208,21 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
         </form>
       ) : null}
     </div>
+  );
+}
+
+function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 self-end pb-2.5 text-sm font-medium text-slate-700">
+      <input
+        checked={checked}
+        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500"
+        name="remoteOnly"
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      Remote only
+    </label>
   );
 }
 

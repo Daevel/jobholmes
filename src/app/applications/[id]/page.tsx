@@ -4,7 +4,7 @@ import { AiMatchBadge, AppShell, ButtonLink, DetailField, OutcomeBadge, SectionC
 import { JobFitAnalysis } from "@/components/job-fit-analysis";
 import { checkCoverLetterEligibility, selectCoveredRequirements } from "@/lib/ai/cover-letter";
 import { parseRequirementsAndGaps, type ParsedRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
-import { formatDate, formatSalary, getDaysToResponse } from "@/lib/applications/display";
+import { formatApplicationLocation, formatDate, formatSalary, getDaysToResponse } from "@/lib/applications/display";
 import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
 import { getApplicationForUser } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
@@ -42,7 +42,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             </div>
             <p className="mt-2 break-words text-base text-slate-600 sm:text-lg">{application.role}</p>
             <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-              <HeaderField label="Country" value={application.country} />
+              <HeaderField label="Location" value={formatApplicationLocation(application)} />
               <HeaderField label="Work mode" value={application.workMode} />
               <HeaderField label="Category" value={application.roleCategory} />
               <HeaderField label="Applied on" value={formatDate(application.appliedAt)} />
@@ -61,7 +61,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             <DetailField label="Role" value={application.role} />
             <DetailField label="Role category" value={application.roleCategory} />
             <DetailField label="Seniority" value={application.seniority} />
-            <DetailField label="Country" value={application.country} />
+            <DetailField label="Location" value={formatApplicationLocation(application)} />
             <DetailField label="Work mode" value={application.workMode} />
             <DetailField label="Source" value={application.source} />
             <DetailField label="CV used" value={application.cvVersion} />

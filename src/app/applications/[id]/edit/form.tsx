@@ -37,6 +37,7 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
   const values = state.values ?? defaults;
   const [outcome, setOutcome] = useState(values.outcome ?? "");
   const sourceFieldRef = useRef<SourceFieldHandle>(null);
+  const [remoteOnly, setRemoteOnly] = useState(values.remoteOnly === "true" || values.remoteOnly === "on");
 
   const [cvPrompt, setCvPrompt] = useState<{ cvDocumentId: string; otherApplicationsUsingCv: number } | null>(null);
   const [cvPromptBusy, setCvPromptBusy] = useState(false);
@@ -109,7 +110,9 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
           <Field label="Company" name="company" required state={state} values={values} />
           <Field label="Role" name="role" required state={state} values={values} />
           <Field label="Applied date" name="appliedAt" required state={state} type="date" values={values} />
-          <Field label="Country" name="country" state={state} values={values} />
+          <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
+          {!remoteOnly ? <Field label="Country" name="country" required state={state} values={values} /> : null}
+          {!remoteOnly ? <Field label="City" name="city" state={state} values={values} /> : null}
           <Field label="Work mode" name="workMode" state={state} values={values} />
           <SourceField defaultValue={values.source} ref={sourceFieldRef} sources={sources} />
           <Field label="Vacancy URL" name="vacancyUrl" state={state} type="url" values={values} />
@@ -124,7 +127,12 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
         <p className={formStyles.sectionDescription}>Add or correct the job description used for AI Match. Changing the JD requires re-analysis.</p>
         <div className="mt-5">
           <TextareaField label="Job description" name="jdText" state={state} values={values} />
-          <EnrichmentButton sourceFieldRef={sourceFieldRef} />
+          <EnrichmentButton
+            onRemoteOnlySuggestion={() => {
+              if (!remoteOnly) setRemoteOnly(true);
+            }}
+            sourceFieldRef={sourceFieldRef}
+          />
         </div>
       </section>
 
@@ -268,18 +276,37 @@ function SponsorshipField({ state, values }: { state: UpdateApplicationFormState
   return <label className={formStyles.label}>Sponsorship required<select className={formStyles.input} defaultValue={values.sponsorshipRequired ?? "unknown"} name="sponsorshipRequired"><option value="unknown">Unknown</option><option value="false">No</option><option value="true">Yes</option></select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
 }
 
-function EnrichmentButton({ sourceFieldRef }: { sourceFieldRef: React.RefObject<SourceFieldHandle | null> }) {
+function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 self-end pb-2.5 text-sm font-medium text-slate-700">
+      <input
+        checked={checked}
+        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500"
+        name="remoteOnly"
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      Remote only
+    </label>
+  );
+}
+
+function EnrichmentButton({ sourceFieldRef, onRemoteOnlySuggestion }: { sourceFieldRef: React.RefObject<SourceFieldHandle | null>; onRemoteOnlySuggestion: () => void }) {
   async function extractDetails() {
     const form = document.getElementById("application-form");
     if (!(form instanceof HTMLFormElement)) return;
     const formData = new FormData(form);
     const response = await fetch("/api/ai/application-enrichment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(formData.entries())) });
     if (!response.ok) return;
-    const data = await response.json() as { suggestions: Record<string, string | number | null> };
+    const data = await response.json() as { suggestions: Record<string, string | number | boolean | null> };
     for (const [name, value] of Object.entries(data.suggestions)) {
       if (value === null || value === undefined || value === "") continue;
       if (name === "source") {
         sourceFieldRef.current?.applySuggestion(String(value));
+        continue;
+      }
+      if (name === "remoteOnly") {
+        if (value === true) onRemoteOnlySuggestion();
         continue;
       }
       const field = form.elements.namedItem(name);

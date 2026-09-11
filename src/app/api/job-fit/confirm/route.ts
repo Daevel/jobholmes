@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { baseApplicationFields } from "@/lib/applications/schema";
+import { baseApplicationFields, clearLocationWhenRemoteOnly, validateApplicationLocationFields } from "@/lib/applications/schema";
 import { createApplicationFromVerifiedJobFit } from "@/lib/applications/service";
 import { saveSourceForUser } from "@/lib/applications/sources-service";
 import { verifyJobFitSignature } from "@/lib/ai/job-fit-signature";
@@ -28,7 +28,9 @@ const confirmSchema = baseApplicationFields
   .refine((input) => !input.salaryMin || !input.salaryMax || input.salaryMax >= input.salaryMin, {
     message: "Salary max must not be lower than salary min",
     path: ["salaryMax"],
-  });
+  })
+  .superRefine(validateApplicationLocationFields)
+  .transform(clearLocationWhenRemoteOnly);
 
 export async function POST(request: Request) {
   let userId: string;
