@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { baseApplicationFields } from "@/lib/applications/schema";
 import { createApplicationFromVerifiedJobFit } from "@/lib/applications/service";
+import { saveSourceForUser } from "@/lib/applications/sources-service";
 import { verifyJobFitSignature } from "@/lib/ai/job-fit-signature";
 import { parseRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { requireCurrentUser } from "@/lib/current-user";
@@ -38,7 +39,10 @@ export async function POST(request: Request) {
     return Response.json({ error: "You must be signed in to create an application." }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null);
+  const rawBody = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const { saveSource: saveSourceRaw, ...body } = rawBody ?? {};
+  const saveSource = Boolean(saveSourceRaw);
+
   const parsed = confirmSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: "Invalid request.", fieldErrors: parsed.error.flatten().fieldErrors }, { status: 400 });
 
@@ -72,6 +76,10 @@ export async function POST(request: Request) {
       aiMatchConfidence: jobFit.confidence,
       requirementsAndGaps: jobFit.requirementsAndGapsJson,
     });
+
+    if (saveSource && applicationFields.source) {
+      await saveSourceForUser(userId, applicationFields.source);
+    }
 
     try {
       await syncApplicationToGoogleSheet(application);

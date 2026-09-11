@@ -1,4 +1,4 @@
-import { boolean, index, integer, numeric, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, numeric, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const matchClassEnum = pgEnum("match_class", ["A_STRONG","B_STRETCH","C_LONG_SHOT"]);
 export const applicationOutcomeEnum = pgEnum("application_outcome", ["PENDING","IN_PROGRESS","REJECTED","WITHDRAWN","OFFER"]);
@@ -81,6 +81,14 @@ export const applications = pgTable("applications", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const applicationSources = pgTable("application_sources", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 80 }).notNull(),
+  normalizedName: varchar("normalized_name", { length: 80 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [uniqueIndex("application_sources_user_id_normalized_name_idx").on(table.userId, table.normalizedName)]);
 
 export const aiConversations = pgTable("ai_conversations", {
   id: uuid("id").defaultRandom().primaryKey(),

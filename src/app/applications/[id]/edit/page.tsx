@@ -4,13 +4,14 @@ import { parseRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { EditApplicationForm } from "@/app/applications/[id]/edit/form";
 import { formatDateInput } from "@/lib/applications/display";
 import { getApplicationForUser } from "@/lib/applications/service";
+import { listSourcesForUser } from "@/lib/applications/sources-service";
 import { listCvsForUser } from "@/lib/cvs/service";
 import { requireCurrentUser } from "@/lib/current-user";
 
 export default async function EditApplicationPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireCurrentUser();
   const { id } = await params;
-  const [application, cvs] = await Promise.all([getApplicationForUser(user.id, id), listCvsForUser(user.id)]);
+  const [application, cvs, sources] = await Promise.all([getApplicationForUser(user.id, id), listCvsForUser(user.id), listSourcesForUser(user.id)]);
 
   if (!application) notFound();
 
@@ -46,7 +47,7 @@ export default async function EditApplicationPage({ params }: { params: Promise<
   return (
     <AppShell accountLabel={user.name || user.email} currentPath="/applications">
       <PageHeader action={<ButtonLink href={`/applications/${application.id}`} variant="secondary">Cancel</ButtonLink>} eyebrow="Edit application" subtitle={`${application.company} • ${application.role}`} title="Edit application" />
-      <EditApplicationForm applicationId={application.id} cvs={cvs.map((cv) => ({ id: cv.id, name: cv.name }))} defaults={defaults} />
+      <EditApplicationForm applicationId={application.id} cvs={cvs.map((cv) => ({ id: cv.id, name: cv.name }))} defaults={defaults} sources={sources} />
     </AppShell>
   );
 }

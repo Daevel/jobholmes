@@ -2,6 +2,7 @@
 
 import { createApplicationSchema } from "@/lib/applications/schema";
 import { createApplicationForUser } from "@/lib/applications/service";
+import { saveSourceForUser } from "@/lib/applications/sources-service";
 import { requireCurrentUser } from "@/lib/current-user";
 import { syncApplicationToGoogleSheet } from "@/lib/google/sheets";
 import { redirect } from "next/navigation";
@@ -12,7 +13,8 @@ export async function createApplicationAction(
   formData: FormData,
 ): Promise<CreateApplicationFormState> {
   const rawValues = Object.fromEntries(formData.entries());
-  const parsed = createApplicationSchema.safeParse(rawValues);
+  const { saveSource, ...applicationValues } = rawValues;
+  const parsed = createApplicationSchema.safeParse(applicationValues);
   let applicationId: string | null = null;
 
   if (!parsed.success) {
@@ -26,6 +28,10 @@ export async function createApplicationAction(
     const user = await requireCurrentUser();
     const application = await createApplicationForUser(user.id, parsed.data);
     applicationId = application.id;
+
+    if (typeof saveSource === "string" && saveSource && parsed.data.source) {
+      await saveSourceForUser(user.id, parsed.data.source);
+    }
 
     try {
       await syncApplicationToGoogleSheet(application);

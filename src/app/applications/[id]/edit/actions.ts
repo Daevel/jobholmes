@@ -3,6 +3,7 @@
 import { notFound, redirect } from "next/navigation";
 import { updateApplicationSchema } from "@/lib/applications/schema";
 import { updateApplicationForUser } from "@/lib/applications/service";
+import { saveSourceForUser } from "@/lib/applications/sources-service";
 import { requireCurrentUser } from "@/lib/current-user";
 import { syncUpdatedApplicationToGoogleSheet } from "@/lib/google/sheets";
 import type { UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
@@ -13,7 +14,8 @@ export async function updateApplicationAction(
   formData: FormData,
 ): Promise<UpdateApplicationFormState> {
   const rawValues = Object.fromEntries(formData.entries());
-  const parsed = updateApplicationSchema.safeParse(rawValues);
+  const { saveSource, ...applicationValues } = rawValues;
+  const parsed = updateApplicationSchema.safeParse(applicationValues);
 
   if (!parsed.success) {
     return {
@@ -27,6 +29,10 @@ export async function updateApplicationAction(
     const result = await updateApplicationForUser(user.id, applicationId, parsed.data);
 
     if (!result) notFound();
+
+    if (typeof saveSource === "string" && saveSource && parsed.data.source) {
+      await saveSourceForUser(user.id, parsed.data.source);
+    }
 
     try {
       await syncUpdatedApplicationToGoogleSheet(result.updated, result.previous);

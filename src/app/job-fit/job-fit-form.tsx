@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AiMatchBadge } from "@/components/application-ui";
 import { Button, formStyles } from "@/components/form-ui";
 import { JobFitAnalysis } from "@/components/job-fit-analysis";
+import { SourceField } from "@/components/source-field";
 import { parseRequirementsAndGaps, type RequirementsAndGapsPayload } from "@/lib/ai/requirements-and-gaps";
 
 type CvOption = { id: string; name: string };
@@ -33,7 +34,7 @@ type PreviewResult = {
   payload: RequirementsAndGapsPayload;
 };
 
-export function JobFitForm({ today, cvs }: { today: string; cvs: CvOption[] }) {
+export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOption[]; sources: string[] }) {
   const router = useRouter();
   const [jdText, setJdText] = useState("");
   const [cvDocumentId, setCvDocumentId] = useState("");
@@ -176,7 +177,7 @@ export function JobFitForm({ today, cvs }: { today: string; cvs: CvOption[] }) {
               <TextField defaultValue={today} label="Applied date" name="appliedAt" required type="date" />
               <TextField label="Country" name="country" placeholder="Germany" />
               <TextField label="Work mode" name="workMode" placeholder="Remote" />
-              <TextField label="Source" name="source" placeholder="LinkedIn" />
+              <SourceField sources={sources} />
               <TextField label="Vacancy URL" name="vacancyUrl" placeholder="https://example.com/jobs/123" type="url" />
               <TextField label="Role category" name="roleCategory" placeholder="Frontend" />
               <TextField label="Seniority" name="seniority" placeholder="Senior" />

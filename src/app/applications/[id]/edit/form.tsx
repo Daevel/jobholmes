@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { updateApplicationAction } from "@/app/applications/[id]/edit/actions";
 import { initialUpdateApplicationFormState, type UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
+import { SourceField, type SourceFieldHandle } from "@/components/source-field";
 import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
 
 const outcomeOptions = [
@@ -28,10 +29,11 @@ type FieldName = NonNullable<UpdateApplicationFormState["values"]> extends Parti
 type CvOption = { id: string; name: string };
 type EditDefaults = NonNullable<UpdateApplicationFormState["values"]> & { legacyCvVersion?: string };
 
-export function EditApplicationForm({ applicationId, defaults, cvs }: { applicationId: string; defaults: EditDefaults; cvs: CvOption[] }) {
+export function EditApplicationForm({ applicationId, defaults, cvs, sources }: { applicationId: string; defaults: EditDefaults; cvs: CvOption[]; sources: string[] }) {
   const [state, formAction, pending] = useActionState(updateApplicationAction.bind(null, applicationId), initialUpdateApplicationFormState);
   const values = state.values ?? defaults;
   const [outcome, setOutcome] = useState(values.outcome ?? "");
+  const sourceFieldRef = useRef<SourceFieldHandle>(null);
 
   return (
     <form action={formAction} className="space-y-5" id="application-form">
@@ -46,7 +48,7 @@ export function EditApplicationForm({ applicationId, defaults, cvs }: { applicat
           <Field label="Applied date" name="appliedAt" required state={state} type="date" values={values} />
           <Field label="Country" name="country" state={state} values={values} />
           <Field label="Work mode" name="workMode" state={state} values={values} />
-          <Field label="Source" name="source" state={state} values={values} />
+          <SourceField defaultValue={values.source} ref={sourceFieldRef} sources={sources} />
           <Field label="Vacancy URL" name="vacancyUrl" state={state} type="url" values={values} />
           <Field label="Role category" name="roleCategory" state={state} values={values} />
           <Field label="Seniority" name="seniority" state={state} values={values} />
@@ -59,7 +61,7 @@ export function EditApplicationForm({ applicationId, defaults, cvs }: { applicat
         <p className={formStyles.sectionDescription}>Add or correct the job description used for AI Match. Changing the JD requires re-analysis.</p>
         <div className="mt-5">
           <TextareaField label="Job description" name="jdText" state={state} values={values} />
-          <EnrichmentButton />
+          <EnrichmentButton sourceFieldRef={sourceFieldRef} />
         </div>
       </section>
 
@@ -122,7 +124,7 @@ function SponsorshipField({ state, values }: { state: UpdateApplicationFormState
   return <label className={formStyles.label}>Sponsorship required<select className={formStyles.input} defaultValue={values.sponsorshipRequired ?? "unknown"} name="sponsorshipRequired"><option value="unknown">Unknown</option><option value="false">No</option><option value="true">Yes</option></select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
 }
 
-function EnrichmentButton() {
+function EnrichmentButton({ sourceFieldRef }: { sourceFieldRef: React.RefObject<SourceFieldHandle | null> }) {
   async function extractDetails() {
     const form = document.getElementById("application-form");
     if (!(form instanceof HTMLFormElement)) return;
@@ -132,6 +134,10 @@ function EnrichmentButton() {
     const data = await response.json() as { suggestions: Record<string, string | number | null> };
     for (const [name, value] of Object.entries(data.suggestions)) {
       if (value === null || value === undefined || value === "") continue;
+      if (name === "source") {
+        sourceFieldRef.current?.applySuggestion(String(value));
+        continue;
+      }
       const field = form.elements.namedItem(name);
       if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
         if (field.value.trim() === "") field.value = String(value);

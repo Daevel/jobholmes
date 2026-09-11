@@ -1,15 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { createApplicationAction } from "@/app/applications/new/actions";
 import { initialCreateApplicationFormState, type CreateApplicationFormState } from "@/app/applications/new/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
+import { SourceField, type SourceFieldHandle } from "@/components/source-field";
 
 type FieldName = NonNullable<CreateApplicationFormState["values"]> extends Partial<Record<infer Key, string>> ? Key : never;
 type CvOption = { id: string; name: string };
 
-export function NewApplicationForm({ today, cvs }: { today: string; cvs: CvOption[] }) {
+export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs: CvOption[]; sources: string[] }) {
   const [state, formAction, pending] = useActionState(createApplicationAction, initialCreateApplicationFormState);
+  const sourceFieldRef = useRef<SourceFieldHandle>(null);
 
   return (
     <form action={formAction} className="space-y-5" id="application-form">
@@ -24,7 +26,7 @@ export function NewApplicationForm({ today, cvs }: { today: string; cvs: CvOptio
           <Field state={state} label="Applied date" name="appliedAt" required type="date" defaultValue={today} />
           <Field state={state} label="Country" name="country" placeholder="Germany" />
           <Field state={state} label="Work mode" name="workMode" placeholder="Remote" />
-          <Field state={state} label="Source" name="source" placeholder="LinkedIn" />
+          <SourceField defaultValue={state.values?.source} ref={sourceFieldRef} sources={sources} />
           <Field state={state} label="Vacancy URL" name="vacancyUrl" placeholder="https://example.com/jobs/123" type="url" />
           <Field state={state} label="Role category" name="roleCategory" placeholder="Frontend" />
           <Field state={state} label="Seniority" name="seniority" placeholder="Senior" />
@@ -37,7 +39,7 @@ export function NewApplicationForm({ today, cvs }: { today: string; cvs: CvOptio
         <p className={formStyles.sectionDescription}>Paste the job description so JobHolmes can extract role details and compare the position against your selected CV.</p>
         <div className="mt-5">
           <TextareaField label="Job description" name="jdText" placeholder="Paste the full job description here..." state={state} />
-          <EnrichmentButton />
+          <EnrichmentButton sourceFieldRef={sourceFieldRef} />
         </div>
       </section>
 
@@ -109,7 +111,7 @@ function SponsorshipField({ state }: { state: CreateApplicationFormState }) {
   );
 }
 
-function EnrichmentButton() {
+function EnrichmentButton({ sourceFieldRef }: { sourceFieldRef: React.RefObject<SourceFieldHandle | null> }) {
   async function extractDetails() {
     const form = document.getElementById("application-form");
     if (!(form instanceof HTMLFormElement)) return;
@@ -124,6 +126,10 @@ function EnrichmentButton() {
     const data = await response.json() as { suggestions: Record<string, string | number | null> };
     for (const [name, value] of Object.entries(data.suggestions)) {
       if (value === null || value === undefined || value === "") continue;
+      if (name === "source") {
+        sourceFieldRef.current?.applySuggestion(String(value));
+        continue;
+      }
       const field = form.elements.namedItem(name);
       if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
         if (field.value.trim() === "") field.value = String(value);
