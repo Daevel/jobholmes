@@ -2,6 +2,7 @@ import { Download, FileText } from "lucide-react";
 import { AppShell, EmptyState, PageHeader, SectionCard } from "@/components/application-ui";
 import { listCvsForUser } from "@/lib/cvs/service";
 import { requireCurrentUser } from "@/lib/current-user";
+import { CvDeleteButton } from "./delete-button";
 import { CvUploadForm } from "./upload-form";
 
 const dateFormatter = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" });
@@ -30,10 +31,13 @@ export default async function CvsPage() {
                     <p className="mt-1 text-xs text-slate-400">Uploaded {dateFormatter.format(cv.createdAt)} · {formatBytes(cv.sizeBytes)}</p>
                   </div>
                 </div>
-                <a className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 sm:w-auto" href={`/api/cvs/${cv.id}/download`}>
-                  <Download aria-hidden="true" className="h-4 w-4" />
-                  Download
-                </a>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <a className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 sm:w-auto" href={`/api/cvs/${cv.id}/download`}>
+                    <Download aria-hidden="true" className="h-4 w-4" />
+                    Download
+                  </a>
+                  <CvDeleteButton cvId={cv.id} cvName={cv.name} />
+                </div>
               </article>
             ))}
           </div>

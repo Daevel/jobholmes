@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateApplicationAction } from "@/app/applications/[id]/edit/actions";
 import { initialUpdateApplicationFormState, type UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
+import { determineCvRejectionPromptOptions } from "@/lib/applications/cv-rejection-prompt";
 import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
 
 const outcomeOptions = [
@@ -30,13 +32,74 @@ type CvOption = { id: string; name: string };
 type EditDefaults = NonNullable<UpdateApplicationFormState["values"]> & { legacyCvVersion?: string };
 
 export function EditApplicationForm({ applicationId, defaults, cvs, sources }: { applicationId: string; defaults: EditDefaults; cvs: CvOption[]; sources: string[] }) {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(updateApplicationAction.bind(null, applicationId), initialUpdateApplicationFormState);
   const values = state.values ?? defaults;
   const [outcome, setOutcome] = useState(values.outcome ?? "");
   const sourceFieldRef = useRef<SourceFieldHandle>(null);
 
+  const [cvPrompt, setCvPrompt] = useState<{ cvDocumentId: string; otherApplicationsUsingCv: number } | null>(null);
+  const [cvPromptBusy, setCvPromptBusy] = useState(false);
+  const [cvPromptError, setCvPromptError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (state.cvRejectionPrompt) setCvPrompt(state.cvRejectionPrompt);
+  }, [state.cvRejectionPrompt]);
+
+  useEffect(() => {
+    if (!cvPrompt) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !cvPromptBusy) closeCvPrompt();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cvPrompt, cvPromptBusy]);
+
+  function closeCvPrompt() {
+    setCvPrompt(null);
+    setCvPromptError(null);
+    router.push(`/applications/${applicationId}`);
+  }
+
+  async function handleUnlinkCv() {
+    if (!cvPrompt || cvPromptBusy) return;
+    setCvPromptBusy(true);
+    setCvPromptError(null);
+
+    try {
+      const response = await fetch(`/api/applications/${applicationId}/unlink-cv`, { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not unlink the CV. Please try again.");
+      closeCvPrompt();
+    } catch (unlinkError) {
+      setCvPromptError(unlinkError instanceof Error ? unlinkError.message : "Could not unlink the CV. Please try again.");
+    } finally {
+      setCvPromptBusy(false);
+    }
+  }
+
+  async function handleDeleteCv() {
+    if (!cvPrompt || cvPromptBusy) return;
+    setCvPromptBusy(true);
+    setCvPromptError(null);
+
+    try {
+      const response = await fetch(`/api/cvs/${cvPrompt.cvDocumentId}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not delete the CV. Please try again.");
+      closeCvPrompt();
+    } catch (deleteError) {
+      setCvPromptError(deleteError instanceof Error ? deleteError.message : "Could not delete the CV. Please try again.");
+    } finally {
+      setCvPromptBusy(false);
+    }
+  }
+
   return (
-    <form action={formAction} className="space-y-5" id="application-form">
+    <>
+      <form action={formAction} className="space-y-5" id="application-form">
       {state.formError ? <p className={formStyles.formError}>{state.formError}</p> : null}
 
       <section className={formStyles.section}>
@@ -99,6 +162,87 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
         <Button disabled={pending} type="submit">{pending ? "Saving..." : "Save changes"}</Button>
       </div>
     </form>
+
+    {cvPrompt ? (
+      <CvRejectionDialog
+        busy={cvPromptBusy}
+        error={cvPromptError}
+        onDismiss={closeCvPrompt}
+        onDelete={handleDeleteCv}
+        onKeep={closeCvPrompt}
+        onUnlink={handleUnlinkCv}
+        options={determineCvRejectionPromptOptions({ otherApplicationsUsingCv: cvPrompt.otherApplicationsUsingCv })}
+      />
+    ) : null}
+    </>
+  );
+}
+
+function CvRejectionDialog({
+  busy,
+  error,
+  onDismiss,
+  onDelete,
+  onKeep,
+  onUnlink,
+  options,
+}: {
+  busy: boolean;
+  error: string | null;
+  onDismiss: () => void;
+  onDelete: () => void;
+  onKeep: () => void;
+  onUnlink: () => void;
+  options: ReturnType<typeof determineCvRejectionPromptOptions>;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+      onClick={() => {
+        if (!busy) onDismiss();
+      }}
+    >
+      <div
+        aria-labelledby="cv-rejection-title"
+        aria-modal="true"
+        className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <h2 className="text-base font-semibold text-slate-950" id="cv-rejection-title">This application was marked Rejected</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">What should happen to the CV attached to it?</p>
+        {error ? <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={busy}
+            onClick={onKeep}
+            type="button"
+          >
+            Keep the CV
+          </button>
+          <button
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={busy}
+            onClick={onUnlink}
+            type="button"
+          >
+            {busy ? "Working..." : "Unlink from this application"}
+          </button>
+          <button
+            className="inline-flex min-h-10 flex-col items-center justify-center gap-0.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white outline-none transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+            disabled={busy || !options.deletePermanently.available}
+            onClick={onDelete}
+            type="button"
+          >
+            <span>{busy ? "Working..." : "Delete permanently"}</span>
+            {!options.deletePermanently.available && options.deletePermanently.disabledReason ? (
+              <span className="text-xs font-normal">{options.deletePermanently.disabledReason}</span>
+            ) : null}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

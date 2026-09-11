@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { updateApplicationSchema } from "@/lib/applications/schema";
 import { updateApplicationForUser } from "@/lib/applications/service";
 import { saveSourceForUser } from "@/lib/applications/sources-service";
+import { countApplicationsUsingCv } from "@/lib/cvs/service";
 import { requireCurrentUser } from "@/lib/current-user";
 import { syncUpdatedApplicationToGoogleSheet } from "@/lib/google/sheets";
 import type { UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
@@ -23,6 +24,8 @@ export async function updateApplicationAction(
       values: getStringValues(rawValues),
     };
   }
+
+  let cvRejectionPrompt: UpdateApplicationFormState["cvRejectionPrompt"];
 
   try {
     const user = await requireCurrentUser();
@@ -44,11 +47,21 @@ export async function updateApplicationAction(
         errorName: error instanceof Error ? error.name : "UnknownError",
       });
     }
+
+    const becameRejected = result.previous.outcome !== "REJECTED" && result.updated.outcome === "REJECTED";
+    if (becameRejected && result.updated.cvDocumentId) {
+      const otherApplicationsUsingCv = await countApplicationsUsingCv(user.id, result.updated.cvDocumentId, { excludeApplicationId: applicationId });
+      cvRejectionPrompt = { cvDocumentId: result.updated.cvDocumentId, otherApplicationsUsingCv };
+    }
   } catch {
     return {
       formError: "Could not update application. Please try again.",
       values: getStringValues(rawValues),
     };
+  }
+
+  if (cvRejectionPrompt) {
+    return { cvRejectionPrompt };
   }
 
   redirect(`/applications/${applicationId}`);
