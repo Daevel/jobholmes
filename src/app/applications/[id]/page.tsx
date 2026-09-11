@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AiMatchBadge, AppShell, ButtonLink, DetailField, OutcomeBadge, SectionCard, StageBadge } from "@/components/application-ui";
 import { JobFitAnalysis } from "@/components/job-fit-analysis";
+import { checkCoverLetterEligibility, selectCoveredRequirements } from "@/lib/ai/cover-letter";
 import { parseRequirementsAndGaps, type ParsedRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { formatDate, formatSalary, getDaysToResponse } from "@/lib/applications/display";
 import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
 import { getApplicationForUser } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
 import { AiMatchButton } from "./ai-match-button";
+import { CoverLetterSection } from "./cover-letter-section";
 
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireCurrentUser();
@@ -19,6 +21,13 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const daysToResponse = getDaysToResponse(application);
   const requirementsAndGaps = parseRequirementsAndGaps(application.requirementsAndGaps);
   const legacyRequirementsAndGaps = requirementsAndGaps.kind === "legacy" ? requirementsAndGaps.text : null;
+  const coveredRequirementCount = requirementsAndGaps.kind === "structured" ? selectCoveredRequirements(requirementsAndGaps.payload).length : 0;
+  const coverLetterEligibility = checkCoverLetterEligibility({
+    jdText: application.jdText,
+    cvDocumentId: application.cvDocumentId,
+    hasStructuredMatch: requirementsAndGaps.kind === "structured",
+    coveredRequirementCount,
+  });
 
   return (
     <AppShell accountLabel={user.name || user.email} currentPath="/applications">
@@ -103,6 +112,10 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
               <div className="mt-4 max-h-[520px] overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">{application.jdText}</div>
             </details>
           ) : <p className="text-sm text-slate-500">No job description added yet.</p>}
+        </SectionCard>
+
+        <SectionCard className="p-5 xl:col-span-2" description="Generated only from the requirements AI Match confirmed are covered by your selected CV." title="Cover letter">
+          <CoverLetterSection applicationId={application.id} company={application.company} eligibility={coverLetterEligibility} initialCoverLetter={application.coverLetter} role={application.role} />
         </SectionCard>
 
         <SectionCard className="p-5 xl:col-span-2" title="Notes">

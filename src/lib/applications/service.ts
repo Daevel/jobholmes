@@ -241,3 +241,13 @@ export async function updateApplicationForUser(userId: string, applicationId: st
 
   return { previous, updated };
 }
+
+export async function saveCoverLetterForUser(userId: string, applicationId: string, coverLetter: string | null) {
+  const [updated] = await db
+    .update(applications)
+    .set({ coverLetter, updatedAt: new Date() })
+    .where(and(eq(applications.userId, userId), eq(applications.id, applicationId)))
+    .returning();
+
+  return updated ?? null;
+}

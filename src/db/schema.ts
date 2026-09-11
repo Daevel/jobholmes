@@ -77,6 +77,7 @@ export const applications = pgTable("applications", {
   rejectionType: varchar("rejection_type", { length: 80 }),
   requirementsAndGaps: text("requirements_and_gaps"),
   notes: text("notes"),
+  coverLetter: text("cover_letter"),
   jdVerifiedAt: timestamp("jd_verified_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
