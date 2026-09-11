@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Trash2 } from "lucide-react";
 
 export type AiFunnelSnapshot = {
   applications: number;
@@ -54,6 +55,8 @@ export function AiAnalystClient({
   const [isSending, setIsSending] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDeleteConversation, setPendingDeleteConversation] = useState<AiAnalystConversation | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function refreshConversations(selectedId?: string) {
     const response = await fetch("/api/ai/conversations");
@@ -95,6 +98,31 @@ export function AiAnalystClient({
       setMessages([]);
     } catch {
       setError("Could not create a new analysis. Please try again.");
+    }
+  }
+
+  async function confirmDeleteConversation() {
+    if (!pendingDeleteConversation || isDeleting) return;
+    const conversationToDelete = pendingDeleteConversation;
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/ai/conversations/${conversationToDelete.id}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not delete analysis. Please try again.");
+
+      setConversations((current) => current.filter((conversation) => conversation.id !== conversationToDelete.id));
+      if (selectedConversationId === conversationToDelete.id) {
+        setSelectedConversationId(null);
+        setMessages([]);
+      }
+      setPendingDeleteConversation(null);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete analysis. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -145,15 +173,27 @@ export function AiAnalystClient({
             ) : (
               <div className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-2 xl:overflow-visible xl:pb-0">
                 {conversations.map((conversation) => (
-                  <button
-                    key={conversation.id}
-                    className={`min-w-[220px] rounded-lg border px-3 py-3 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-500 xl:min-w-0 xl:w-full ${conversation.id === selectedConversationId ? "border-indigo-200 bg-indigo-50 text-indigo-900" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
-                    onClick={() => selectConversation(conversation.id)}
-                    type="button"
-                  >
-                    <span className="block truncate text-sm font-semibold">{conversation.title}</span>
-                    <span className="mt-1 block text-xs text-slate-500">{formatTimestamp(conversation.updatedAt)}</span>
-                  </button>
+                  <div key={conversation.id} className="relative min-w-[220px] xl:min-w-0 xl:w-full">
+                    <button
+                      className={`w-full rounded-lg border py-3 pl-3 pr-10 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-500 ${conversation.id === selectedConversationId ? "border-indigo-200 bg-indigo-50 text-indigo-900" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
+                      onClick={() => selectConversation(conversation.id)}
+                      type="button"
+                    >
+                      <span className="block truncate text-sm font-semibold">{conversation.title}</span>
+                      <span className="mt-1 block text-xs text-slate-500">{formatTimestamp(conversation.updatedAt)}</span>
+                    </button>
+                    <button
+                      aria-label={`Delete "${conversation.title}"`}
+                      className="absolute right-2 top-2 rounded-md p-1.5 text-slate-400 outline-none transition hover:bg-red-50 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-500"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setPendingDeleteConversation(conversation);
+                      }}
+                      type="button"
+                    >
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -199,6 +239,35 @@ export function AiAnalystClient({
           </div>
         </ClientSectionCard>
       </section>
+
+      {pendingDeleteConversation ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
+          <div aria-labelledby="delete-analysis-title" aria-modal="true" className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl" role="dialog">
+            <h2 className="text-base font-semibold text-slate-950" id="delete-analysis-title">Delete analysis?</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              This will permanently delete &ldquo;<span className="font-medium text-slate-800">{pendingDeleteConversation.title}</span>&rdquo; and all its messages. This cannot be undone.
+            </p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isDeleting}
+                onClick={() => setPendingDeleteConversation(null)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="inline-flex min-h-10 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white outline-none transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isDeleting}
+                onClick={confirmDeleteConversation}
+                type="button"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

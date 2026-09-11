@@ -1,6 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { aiConversations, aiMessages } from "@/db/schema";
+import { getOpenAIClient } from "@/lib/ai/client";
+import { selectOpenaiResponseIdsToDelete } from "@/lib/ai/response-cleanup";
 
 export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
@@ -109,6 +111,37 @@ export async function appendAssistantMessage({
 
   await updateLastOpenaiResponseId(userId, conversationId, openaiResponseId);
   return message;
+}
+
+/**
+ * Best-effort OpenAI cleanup first (a failed DELETE never blocks the local delete — the user
+ * expects the conversation to disappear from their UI regardless), then removes the
+ * conversation row; the aiMessages FK cascade removes its messages.
+ */
+export async function deleteConversationForUser(userId: string, conversationId: string): Promise<{ deleted: boolean }> {
+  const conversation = await getConversationForUser(userId, conversationId);
+  if (!conversation) return { deleted: false };
+
+  const assistantMessages = await db
+    .select({ openaiResponseId: aiMessages.openaiResponseId })
+    .from(aiMessages)
+    .where(and(eq(aiMessages.conversationId, conversationId), eq(aiMessages.role, "assistant")));
+
+  const responseIdsToDelete = selectOpenaiResponseIdsToDelete(assistantMessages);
+
+  if (responseIdsToDelete.length > 0) {
+    const openai = getOpenAIClient();
+    const results = await Promise.allSettled(responseIdsToDelete.map((responseId) => openai.responses.delete(responseId)));
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error("Failed to delete OpenAI response", { responseId: responseIdsToDelete[index], error: result.reason });
+      }
+    });
+  }
+
+  await db.delete(aiConversations).where(and(eq(aiConversations.userId, userId), eq(aiConversations.id, conversationId)));
+
+  return { deleted: true };
 }
 
 export async function updateLastOpenaiResponseId(userId: string, conversationId: string, responseId: string) {
