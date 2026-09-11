@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { AiMatchBadge, AppShell, ApplicationMobileCard, ButtonLink, EmptyState, OutcomeBadge, PageHeader, SectionCard, StageBadge } from "@/components/application-ui";
+import { SortableHeader } from "@/components/sortable-header";
 import { formatDate, matchLabels, outcomeLabels, stageLabels } from "@/lib/applications/display";
 import { AI_MATCH_UNANALYZED, matchesAiMatchFilter, type AiMatchFilter } from "@/lib/applications/ai-match";
 import { listApplicationsForUser } from "@/lib/applications/service";
+import { isSortDirection, isSortField, type SortDirection, type SortField } from "@/lib/applications/sort-order";
 import { requireCurrentUser } from "@/lib/current-user";
+import { ApplicationsFilters } from "@/app/applications/applications-filters";
 
 const filterOptions = [
   { label: "All", href: "/applications", value: null },
@@ -12,10 +15,12 @@ const filterOptions = [
   { label: "Offer", href: "/applications?outcome=OFFER", value: "OFFER" },
 ] as const;
 
-export default async function ApplicationsPage({ searchParams }: { searchParams?: Promise<{ outcome?: string; q?: string; stage?: string; match?: string }> }) {
+export default async function ApplicationsPage({ searchParams }: { searchParams?: Promise<{ outcome?: string; q?: string; stage?: string; match?: string; sort?: string; dir?: string }> }) {
   const user = await requireCurrentUser();
   const params = await searchParams;
-  const applications = await listApplicationsForUser(user.id);
+  const sortField: SortField = isSortField(params?.sort) ? params.sort : "appliedAt";
+  const sortDirection: SortDirection = isSortDirection(params?.dir) ? params.dir : "desc";
+  const applications = await listApplicationsForUser(user.id, { field: sortField, direction: sortDirection });
   const selectedOutcome = filterOptions.find((option) => option.value === params?.outcome)?.value ?? null;
   const selectedStage = params?.stage && params.stage in stageLabels ? params.stage : "";
   const selectedMatch: AiMatchFilter = params?.match === AI_MATCH_UNANALYZED || (params?.match && params.match in matchLabels) ? params.match as AiMatchFilter : "";
@@ -27,6 +32,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams?
     if (query && !`${application.company} ${application.role}`.toLowerCase().includes(query)) return false;
     return true;
   });
+  const preservedParams = { q: params?.q || undefined, stage: selectedStage || undefined, match: selectedMatch || undefined, outcome: selectedOutcome || undefined };
 
   return (
     <AppShell accountLabel={user.name || user.email} contentSize="wide" currentPath="/applications">
@@ -40,54 +46,40 @@ export default async function ApplicationsPage({ searchParams }: { searchParams?
         ))}
       </section>
 
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:grid-cols-[1fr_180px_180px_auto]" action="/applications">
-        {selectedOutcome ? <input name="outcome" type="hidden" value={selectedOutcome} /> : null}
-        <label className="text-sm font-medium text-slate-700">
-          Search company or role
-          <input className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100" defaultValue={params?.q ?? ""} name="q" placeholder="Company or role" type="search" />
-        </label>
-        <label className="text-sm font-medium text-slate-700">
-          Stage
-          <select className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100" defaultValue={selectedStage} name="stage">
-            <option value="">Any stage</option>
-            {Object.entries(stageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-        </label>
-        <label className="text-sm font-medium text-slate-700">
-          AI Match
-          <select className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100" defaultValue={selectedMatch} name="match">
-            <option value="">Any AI match</option>
-            {Object.entries(matchLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            <option value={AI_MATCH_UNANALYZED}>Not analyzed</option>
-          </select>
-        </label>
-        <div className="flex items-end gap-2">
-          <button className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white outline-none transition hover:bg-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 md:w-auto" type="submit">Filter</button>
-        </div>
-      </form>
-
-      {visibleApplications.length === 0 ? (
-        <EmptyState action={<ButtonLink href="/applications/new">Add application</ButtonLink>} description="Add a new application or switch filters to see more tracked roles." title="No applications found" />
-      ) : (
-        <ApplicationsTable applications={visibleApplications} />
-      )}
+      <ApplicationsFilters>
+        {visibleApplications.length === 0 ? (
+          <EmptyState action={<ButtonLink href="/applications/new">Add application</ButtonLink>} description="Add a new application or switch filters to see more tracked roles." title="No applications found" />
+        ) : (
+          <ApplicationsTable applications={visibleApplications} preservedParams={preservedParams} sortDirection={sortDirection} sortField={sortField} />
+        )}
+      </ApplicationsFilters>
     </AppShell>
   );
 }
 
-function ApplicationsTable({ applications }: { applications: Awaited<ReturnType<typeof listApplicationsForUser>> }) {
+function ApplicationsTable({
+  applications,
+  sortField,
+  sortDirection,
+  preservedParams,
+}: {
+  applications: Awaited<ReturnType<typeof listApplicationsForUser>>;
+  sortField: SortField;
+  sortDirection: SortDirection;
+  preservedParams: { q?: string; stage?: string; match?: string; outcome?: string };
+}) {
   return (
     <SectionCard>
       <div className="hidden xl:block">
         <table className="w-full table-fixed border-collapse text-left text-sm">
           <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
             <tr>
-              <th className="w-[27%] px-3 py-3">Company</th>
+              <SortableHeader className="w-[27%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="company" label="Company" preservedParams={preservedParams} />
               <th className="w-[12%] px-3 py-3">Country</th>
-              <th className="w-[12%] px-3 py-3">Applied</th>
-              <th className="w-[13%] px-3 py-3">Stage</th>
-              <th className="w-[11%] px-3 py-3">Outcome</th>
-              <th className="w-[13%] px-3 py-3">AI Match</th>
+              <SortableHeader className="w-[12%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="appliedAt" label="Applied" preservedParams={preservedParams} />
+              <SortableHeader className="w-[13%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="stage" label="Stage" preservedParams={preservedParams} />
+              <SortableHeader className="w-[11%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="outcome" label="Outcome" preservedParams={preservedParams} />
+              <SortableHeader className="w-[13%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="aiMatch" label="AI Match" preservedParams={preservedParams} />
               <th className="w-[6%] px-3 py-3">Actions</th>
             </tr>
           </thead>

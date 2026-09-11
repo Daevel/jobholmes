@@ -1,12 +1,37 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql, type SQL } from "drizzle-orm";
+import type { PgColumn } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { applications } from "@/db/schema";
 import type { CreateApplicationInput, UpdateApplicationInput } from "@/lib/applications/schema";
 import { getCvForUser } from "@/lib/cvs/service";
 import { getNextRequirementsAndGaps } from "@/lib/applications/requirements-preservation";
 import { getNextRejectionReason } from "@/lib/applications/rejection-reason";
+import { outcomeSortOrder, stageSortOrder, type SortDirection, type SortField } from "@/lib/applications/sort-order";
 export { getNextRequirementsAndGaps } from "@/lib/applications/requirements-preservation";
-export function listApplicationsForUser(userId:string){return db.select().from(applications).where(eq(applications.userId,userId)).orderBy(desc(applications.appliedAt));}
+
+function buildEnumOrderExpr(column: PgColumn, order: readonly string[]): SQL {
+  const whens = order.map((value, index) => sql`WHEN ${column} = ${value} THEN ${index}`);
+  return sql`(CASE ${sql.join(whens, sql` `)} ELSE ${order.length} END)`;
+}
+
+function buildAiMatchOrderExpr(direction: SortDirection): SQL {
+  return direction === "asc" ? sql`${applications.aiMatchPercentage} ASC NULLS LAST` : sql`${applications.aiMatchPercentage} DESC NULLS LAST`;
+}
+
+function buildApplicationsOrderBy(sort?: { field: SortField; direction: SortDirection }): SQL[] {
+  if (!sort) return [desc(applications.appliedAt)];
+  const { field, direction } = sort;
+  const dir = direction === "asc" ? asc : desc;
+  if (field === "appliedAt") return [dir(applications.appliedAt)];
+  if (field === "company") return [dir(applications.company), desc(applications.appliedAt)];
+  if (field === "stage") return [dir(buildEnumOrderExpr(applications.stage, stageSortOrder)), desc(applications.appliedAt)];
+  if (field === "outcome") return [dir(buildEnumOrderExpr(applications.outcome, outcomeSortOrder)), desc(applications.appliedAt)];
+  return [buildAiMatchOrderExpr(direction), desc(applications.appliedAt)];
+}
+
+export function listApplicationsForUser(userId: string, sort?: { field: SortField; direction: SortDirection }) {
+  return db.select().from(applications).where(eq(applications.userId, userId)).orderBy(...buildApplicationsOrderBy(sort));
+}
 export async function getApplicationForUser(userId:string,applicationId:string){const [row]=await db.select().from(applications).where(and(eq(applications.userId,userId),eq(applications.id,applicationId))).limit(1);return row??null;}
 
 export type ApplicationStats = {
