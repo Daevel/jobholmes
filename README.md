@@ -1,38 +1,89 @@
-# JobHolmes — Alpha 0.1
+# JobHolmes
 
-> Understand why your job search is not converting.
+> Job searching without a system means scattered spreadsheets, no visibility into what's actually converting, and no easy way to tell whether a role is worth applying to before you do. JobHolmes tracks your applications through a real funnel, evaluates fit using evidence instead of a black-box score, and lets you ask questions about your own search in plain language.
 
-## Stack
-- Next.js + TypeScript
-- Neon PostgreSQL
-- Drizzle ORM
-- Auth.js + GitHub OAuth
-- OpenAI Responses API
-- Zod
-- Tailwind CSS
+## What it does
 
-## Core rule
-PostgreSQL is the source of truth. OpenAI reasons over JobHolmes data; it is not the database.
+- **Application tracking with a real funnel.** Every application moves through stages (recruiter screening, technical, final, ...) and outcomes (pending, rejected, offer, ...), so you can see where things stall instead of just listing candidatures.
+- **AI Match, grounded in evidence.** JobHolmes extracts structured requirements from a job description, checks each one against your selected CV's actual text, and only then produces a match class, score, and confidence — every requirement is marked covered, partial, or not covered, with the CV excerpt that backs it up. Nothing is invented.
+- **Job Fit Preview.** Run the same matching engine against a job description *before* creating an application, so you can decide whether it's worth applying at all.
+- **Cover letters grounded in what AI Match already confirmed.** Generation only draws on requirements AI Match marked as covered — it won't claim skills or experience your CV doesn't support.
+- **AI Analyst.** Ask questions about your funnel, conversion rates, or rejection patterns in plain language; answers are grounded only in your own stored data, never invented.
+- **CV library.** Keep multiple CV versions, each with extracted text used for matching and Job Fit.
 
-## Setup
+## Who it's for
+
+One person actively job searching who wants to track and understand their own process — not a recruiter-facing ATS.
+
+## Architecture
+
+- **Next.js** — UI, server actions/API routes, and authentication (Auth.js + GitHub OAuth) in one app.
+- **PostgreSQL on Neon, via Drizzle ORM** — the source of truth for every application, CV, and conversation. Nothing else owns this data.
+- **OpenAI (Responses API)** — a reasoning layer over data JobHolmes already has. It extracts requirements, compares them to CV evidence, writes cover letters, and answers AI Analyst questions; it never originates facts on its own. See `AGENTS.md` for the conventions this follows (centralized instructions, the single evidence-grounded matching pipeline, HMAC-verified Job Fit → application creation).
+- **Vercel Blob** — stores uploaded CV PDFs.
+- **Google Sheets (optional)** — a one-way mirror of new applications, for anyone who also wants a spreadsheet view. Postgres stays the source of truth; the sheet is never read back.
+
+### Data model, in brief
+- `users` — one row per signed-in account.
+- `user_profiles` — headline/skills/target-role fields the AI context can read; there's no onboarding UI to fill them in yet, so they're empty for everyone today.
+- `cv_documents` — the CV library.
+- `applications` — the funnel record: stage, outcome, JD text, AI Match results, cover letter.
+- `application_sources` — a per-user reusable list of "where did this come from" values.
+- `ai_conversations` / `ai_messages` — AI Analyst chat history.
+
+## Local setup
+
 ```bash
+git clone <repo-url>
+cd jobholmes
 npm install
 cp .env.example .env.local
 ```
-Configure `DATABASE_URL`, `AUTH_SECRET`, GitHub OAuth credentials, and `OPENAI_API_KEY`. For `DATABASE_URL`, use your own isolated Neon branch rather than the one Preview/Production use — see *Local development database* below before running any `db:*` command.
 
-Google Sheets mirror support requires `GOOGLE_SHEETS_SPREADSHEET_ID`, `GOOGLE_SHEETS_SHEET_NAME`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`. Share the target spreadsheet with the service account email using Editor permission. PostgreSQL remains the source of truth; the sheet is only a one-way mirror for new JobHolmes applications.
+Fill in `.env.local`:
 
-GitHub OAuth local URLs:
+| Variable | What it's for |
+|---|---|
+| `DATABASE_URL` | Postgres connection string. Use your own isolated Neon branch — see *Local development database* below, don't reuse Preview/Production's. |
+| `AUTH_SECRET` | Auth.js session encryption secret. |
+| `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` | GitHub OAuth app credentials (sign-in is GitHub-only today). |
+| `OPENAI_API_KEY` | OpenAI API key for the Responses API. |
+| `OPENAI_MODEL` | Which OpenAI model to use. |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for CV file storage. |
+| `NEXT_PUBLIC_APP_URL` | Base app URL. |
+| `GOOGLE_SHEETS_SPREADSHEET_ID` / `GOOGLE_SHEETS_SHEET_NAME` / `GOOGLE_SERVICE_ACCOUNT_EMAIL` / `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | Only needed for the optional Google Sheets mirror; share the target spreadsheet with the service account email using Editor permission. |
+
+GitHub OAuth app, local URLs:
 - Homepage: `http://localhost:3000`
 - Callback: `http://localhost:3000/api/auth/callback/github`
 
-Create schema:
+Create the schema (see *Migrations* below for what each command actually does):
 ```bash
 npm run db:generate
 npm run db:migrate
 ```
-For rapid alpha development you can use `npm run db:push`.
+
+Then:
+```bash
+npm run dev
+```
+Health check: `http://localhost:3000/api/health`.
+
+### Essential commands
+- `npm run dev` — start the dev server
+- `npm run build` — production build (also runs the migrations check when Vercel sets `VERCEL_ENV`)
+- `npm run typecheck` — TypeScript check, no emit
+- `npm test` — run the test suite
+- `npm run db:generate` / `npm run db:migrate` — create and apply a tracked migration
+- `npm run db:push` — fast, untracked schema sync for local iteration only (see *Migrations*)
+- `npm run db:check` — verify migrations against `DATABASE_URL` by hand
+- `npm run db:studio` — browse your database with Drizzle Studio
+
+One-time historical import, if you're migrating from a pre-JobHolmes tracker:
+```bash
+IMPORT_USER_EMAIL="you@example.com" npm run import:legacy-applications
+```
+Skips applications that already exist for that user/company/role/applied-date combination.
 
 ## Migrations
 `npm run db:push` (fast local iteration) does **not** generate or track a migration — it only
@@ -48,18 +99,6 @@ migration for any schema change with `npm run db:generate`, commit the resulting
 file, and apply it to that environment's database with `npm run db:migrate` — otherwise the
 deploy's build will fail at the migrations check. `npm run db:check` can also be run by hand
 locally at any time to check your own database.
-
-Import the current legacy tracker once, after the target JobHolmes user already exists:
-```bash
-IMPORT_USER_EMAIL="you@example.com" npm run import:legacy-applications
-```
-The import skips existing applications with the same user, company, role, and applied date.
-
-Run:
-```bash
-npm run dev
-```
-Health check: `http://localhost:3000/api/health`.
 
 ## Local development database
 Don't point your local `.env.local` at the same Neon database used by Preview or Production. `npm run db:push` (see *Migrations* above) applies `src/db/schema.ts` directly and untracked to whatever `DATABASE_URL` resolves to — running it against a shared database risks clobbering someone else's schema or data.
@@ -81,11 +120,12 @@ One exception: uploaded CV files. There is no branching equivalent for Vercel Bl
 
 Do not commit `.env.local` — it's already covered by `.gitignore`.
 
-## Initial domain
-- users
-- user_profiles
-- applications
-- ai_conversations
-- ai_messages
+## Beta status
 
-The next slice should implement the application table/form, funnel KPI cards, profile onboarding, persistent Investigations UI, and import of the existing tracker.
+JobHolmes is in beta. A few known gaps, honestly:
+
+- **i18n covers the main app surfaces** (applications, dashboard, CVs, Job Fit, cover letter, AI Analyst, the landing page) in English only — no language switcher yet, and a handful of marginal strings (Google Sheets export column headers, some internal log messages) aren't routed through the translation catalog.
+- **No dedicated design system yet.** Styling is Tailwind utility classes reused through a couple of shared style objects, not a formal component/token library — that's planned as its own piece of work, not bundled into feature development.
+- **Test coverage is unit-level only** (`node:test` against pure functions). There's no integration or end-to-end suite against a real database or the OpenAI/Vercel Blob APIs; those paths are verified manually. See `AGENTS.md` for why.
+
+This file is a snapshot of what exists today, not the full roadmap.
