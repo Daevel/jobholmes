@@ -42,7 +42,7 @@ JobHolmes tracks job applications in PostgreSQL and uses OpenAI to reason over t
 - Pure-function tests use `node:test` + `node:assert/strict`, no mocking framework. There is no test environment with a real database — never write a test that connects to a database or calls a real external API. If some logic genuinely needs that, verify it manually and document it instead of adding a new test harness.
 
 ## Branches
-- `main` is Production. As of now, `fix/ui-table-and-contrast` is the branch deployed as Preview — check the Vercel project's Git settings for whichever branch is currently wired to Preview, since this changes as feature branches come and go.
+- `main` is Production. `preview` is the stable branch intended for Preview — confirm it's actually wired that way in the Vercel project's Git settings, since that mapping is configured there, not in this repo.
 
 ## Before adding dependencies or new architecture
 - Read the existing code and the patterns already in use (form structure, API route error handling, test organization) and follow them, instead of introducing a different style just because it seems preferable in the abstract.
