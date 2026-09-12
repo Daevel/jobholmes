@@ -23,6 +23,7 @@ JobHolmes tracks job applications in PostgreSQL and uses OpenAI to reason over t
 ## Migrations
 - `db:push` is fast local iteration only — untracked, no migration generated.
 - Before pushing a branch that triggers a Preview/Production deploy: run `db:generate`, commit the resulting `drizzle/*.sql`, then run `db:migrate` against that environment's database — otherwise `scripts/check-migrations.ts` fails the build. Full detail: `README.md` → "Migrations".
+- Local `DATABASE_URL` should point at your own isolated Neon branch, never at Preview/Production's — see `README.md` → "Local development database".
 
 ## AI Match / Job Fit
 - `runJobFitAnalysis` (`src/lib/ai/match.ts`) is the only match-scoring pipeline, shared by existing applications and the Job Fit Preview. Never add a second, parallel scoring algorithm — extend this one.
