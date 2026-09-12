@@ -3,6 +3,7 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { formStyles } from "@/components/form-ui";
 import { matchesKnownSource, normalizeSourceName } from "@/lib/applications/sources";
+import { t } from "@/lib/i18n/translate";
 
 const OTHER_VALUE = "__other__";
 
@@ -54,7 +55,7 @@ export const SourceField = forwardRef<SourceFieldHandle, { sources: string[]; de
   return (
     <div>
       <label className={formStyles.label}>
-        Source
+        {t("applications.form.sourceField.label")}
         <select
           className={formStyles.input}
           defaultValue={mode === "known" ? (canonicalDefault ?? "") : OTHER_VALUE}
@@ -62,26 +63,26 @@ export const SourceField = forwardRef<SourceFieldHandle, { sources: string[]; de
           onChange={handleSelectChange}
           ref={selectRef}
         >
-          <option value="">Select a source</option>
+          <option value="">{t("applications.form.sourceField.selectPlaceholder")}</option>
           {sources.map((source) => <option key={source} value={source}>{source}</option>)}
-          <option value={OTHER_VALUE}>Other</option>
+          <option value={OTHER_VALUE}>{t("applications.form.sourceField.otherOption")}</option>
         </select>
       </label>
       <div aria-live="polite" className="mt-3 space-y-2" hidden={mode !== "other"}>
         <label className={formStyles.label}>
-          New source name
+          {t("applications.form.sourceField.newSourceLabel")}
           <input
             className={formStyles.input}
             defaultValue={initialMode === "other" ? defaultValue ?? "" : ""}
             name={mode === "other" ? "source" : undefined}
-            placeholder="e.g. Company career page"
+            placeholder={t("applications.form.sourceField.newSourcePlaceholder")}
             ref={otherInputRef}
             type="text"
           />
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500" disabled={mode !== "other"} name="saveSource" type="checkbox" />
-          Save this source for future applications
+          {t("applications.form.sourceField.saveSourceLabel")}
         </label>
       </div>
     </div>

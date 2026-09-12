@@ -5,6 +5,7 @@ import { createApplicationAction } from "@/app/applications/new/actions";
 import { initialCreateApplicationFormState, type CreateApplicationFormState } from "@/app/applications/new/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
+import { t } from "@/lib/i18n/translate";
 
 type FieldName = NonNullable<CreateApplicationFormState["values"]> extends Partial<Record<infer Key, string>> ? Key : never;
 type CvOption = { id: string; name: string };
@@ -19,29 +20,29 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
       {state.formError ? <p className={formStyles.formError}>{state.formError}</p> : null}
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Basic information</h2>
-        <p className={formStyles.sectionDescription}>The minimum details needed to identify this application.</p>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.sections.basicInfo.title")}</h2>
+        <p className={formStyles.sectionDescription}>{t("applications.new.sections.basicInfo.description")}</p>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <Field state={state} label="Company" name="company" required placeholder="Acme GmbH" />
-          <Field state={state} label="Role" name="role" required placeholder="Senior Frontend Engineer" />
-          <Field state={state} label="Applied date" name="appliedAt" required type="date" defaultValue={today} />
+          <Field state={state} label={t("applications.form.company.label")} name="company" required placeholder={t("applications.form.company.placeholder")} />
+          <Field state={state} label={t("applications.form.role.label")} name="role" required placeholder={t("applications.form.role.placeholder")} />
+          <Field state={state} label={t("applications.form.appliedDate.label")} name="appliedAt" required type="date" defaultValue={today} />
           <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
-          {!remoteOnly ? <Field state={state} label="Country" name="country" required placeholder="Germany" /> : null}
-          {!remoteOnly ? <Field state={state} label="City" name="city" placeholder="Berlin" /> : null}
-          <Field state={state} label="Work mode" name="workMode" placeholder="Remote" />
+          {!remoteOnly ? <Field state={state} label={t("applications.form.country.label")} name="country" required placeholder={t("applications.form.country.placeholder")} /> : null}
+          {!remoteOnly ? <Field state={state} label={t("applications.form.city.label")} name="city" placeholder={t("applications.form.city.placeholder")} /> : null}
+          <Field state={state} label={t("applications.form.workMode.label")} name="workMode" placeholder={t("applications.form.workMode.placeholder")} />
           <SourceField defaultValue={state.values?.source} ref={sourceFieldRef} sources={sources} />
-          <Field state={state} label="Vacancy URL" name="vacancyUrl" placeholder="https://example.com/jobs/123" type="url" />
-          <Field state={state} label="Role category" name="roleCategory" placeholder="Frontend" />
-          <Field state={state} label="Seniority" name="seniority" placeholder="Senior" />
+          <Field state={state} label={t("applications.form.vacancyUrl.label")} name="vacancyUrl" placeholder={t("applications.form.vacancyUrl.placeholder")} type="url" />
+          <Field state={state} label={t("applications.form.roleCategory.label")} name="roleCategory" placeholder={t("applications.form.roleCategory.placeholder")} />
+          <Field state={state} label={t("applications.form.seniority.label")} name="seniority" placeholder={t("applications.form.seniority.placeholder")} />
           <CvSelect cvs={cvs} state={state} />
         </div>
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Job description</h2>
-        <p className={formStyles.sectionDescription}>Paste the job description so JobHolmes can extract role details and compare the position against your selected CV.</p>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.sections.jobDescription.title")}</h2>
+        <p className={formStyles.sectionDescription}>{t("applications.new.sections.jobDescription.description")}</p>
         <div className="mt-5">
-          <TextareaField label="Job description" name="jdText" placeholder="Paste the full job description here..." state={state} />
+          <TextareaField label={t("applications.form.jobDescription.label")} name="jdText" placeholder={t("applications.form.jobDescription.placeholder")} state={state} />
           <EnrichmentButton
             onRemoteOnlySuggestion={() => {
               if (!remoteOnly) setRemoteOnly(true);
@@ -52,35 +53,35 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Employment details</h2>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.sections.employmentDetails.title")}</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <Field state={state} label="Work authorization" name="workAuthorization" placeholder="EU citizen" />
+          <Field state={state} label={t("applications.form.workAuthorization.label")} name="workAuthorization" placeholder={t("applications.form.workAuthorization.placeholder")} />
           <SponsorshipField state={state} />
-          <Field state={state} label="Salary min" name="salaryMin" placeholder="70000" type="number" />
-          <Field state={state} label="Salary max" name="salaryMax" placeholder="90000" type="number" />
-          <Field state={state} label="Currency" name="currency" placeholder="EUR" />
+          <Field state={state} label={t("applications.form.salaryMin.label")} name="salaryMin" placeholder={t("applications.form.salaryMin.placeholder")} type="number" />
+          <Field state={state} label={t("applications.form.salaryMax.label")} name="salaryMax" placeholder={t("applications.form.salaryMax.placeholder")} type="number" />
+          <Field state={state} label={t("applications.form.currency.label")} name="currency" placeholder={t("applications.form.currency.placeholder")} />
         </div>
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Application context</h2>
-        <p className={formStyles.sectionDescription}>Add context relevant to this application stage, such as submission details or early feedback.</p>
+        <h2 className={formStyles.sectionTitle}>{t("applications.new.sections.applicationContext.title")}</h2>
+        <p className={formStyles.sectionDescription}>{t("applications.new.sections.applicationContext.description")}</p>
         <div className="mt-5">
-          <TextareaField label="Stage context" name="stageContext" placeholder="Submission details, recruiter feedback, or next steps..." state={state} />
+          <TextareaField label={t("applications.form.stageContext.label")} name="stageContext" placeholder={t("applications.form.stageContext.placeholder")} state={state} />
         </div>
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Notes</h2>
+        <h2 className={formStyles.sectionTitle}>{t("applications.sections.notes.title")}</h2>
         <div className="mt-5">
-          <TextareaField label="Notes" name="notes" placeholder="Context, recruiter notes, next steps..." state={state} />
+          <TextareaField label={t("applications.sections.notes.title")} name="notes" placeholder={t("applications.form.notes.placeholder")} state={state} />
         </div>
       </section>
 
       <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
-        <ButtonLink href="/applications" variant="secondary">Cancel</ButtonLink>
+        <ButtonLink href="/applications" variant="secondary">{t("common.actions.cancel")}</ButtonLink>
         <Button disabled={pending} type="submit">
-          {pending ? "Saving..." : "Add application"}
+          {pending ? t("common.actions.saving") : t("applications.new.submitButton")}
         </Button>
       </div>
     </form>
@@ -92,12 +93,12 @@ function CvSelect({ cvs, state }: { cvs: CvOption[]; state: CreateApplicationFor
 
   return (
     <label className={formStyles.label}>
-      CV used
+      {t("applications.form.cv.label")}
       <select className={formStyles.input} defaultValue={state.values?.cvDocumentId ?? ""} name="cvDocumentId">
-        <option value="">No CV selected</option>
+        <option value="">{t("applications.form.cv.noneOption")}</option>
         {cvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
       </select>
-      {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">No CVs uploaded yet. <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">Upload a CV</a> to enable AI Match.</span> : null}
+      {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.noCvsUploadedPrefix")} <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">{t("applications.form.cv.uploadCvLinkText")}</a> {t("applications.form.cv.uploadCvSuffix")}</span> : null}
       {error ? <span className={formStyles.error}>{error}</span> : null}
     </label>
   );
@@ -108,11 +109,11 @@ function SponsorshipField({ state }: { state: CreateApplicationFormState }) {
 
   return (
     <label className={formStyles.label}>
-      Sponsorship required
+      {t("applications.form.sponsorship.label")}
       <select className={formStyles.input} defaultValue={state.values?.sponsorshipRequired ?? "unknown"} name="sponsorshipRequired">
-        <option value="unknown">Unknown</option>
-        <option value="false">No</option>
-        <option value="true">Yes</option>
+        <option value="unknown">{t("applications.form.sponsorship.options.unknown")}</option>
+        <option value="false">{t("applications.form.sponsorship.options.no")}</option>
+        <option value="true">{t("applications.form.sponsorship.options.yes")}</option>
       </select>
       {error ? <span className={formStyles.error}>{error}</span> : null}
     </label>
@@ -129,7 +130,7 @@ function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (c
         onChange={(event) => onChange(event.target.checked)}
         type="checkbox"
       />
-      Remote only
+      {t("applications.form.remoteOnly.label")}
     </label>
   );
 }
@@ -164,7 +165,7 @@ function EnrichmentButton({ sourceFieldRef, onRemoteOnlySuggestion }: { sourceFi
     }
   }
 
-  return <button className="mt-3 text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" onClick={extractDetails} type="button">Extract details from JD</button>;
+  return <button className="mt-3 text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" onClick={extractDetails} type="button">{t("applications.form.enrichment.buttonLabel")}</button>;
 }
 
 function Field({

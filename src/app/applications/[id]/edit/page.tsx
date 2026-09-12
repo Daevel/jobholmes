@@ -7,6 +7,7 @@ import { getApplicationForUser } from "@/lib/applications/service";
 import { listSourcesForUser } from "@/lib/applications/sources-service";
 import { listCvsForUser } from "@/lib/cvs/service";
 import { requireCurrentUser } from "@/lib/current-user";
+import { t } from "@/lib/i18n/translate";
 
 export default async function EditApplicationPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireCurrentUser();
@@ -48,7 +49,7 @@ export default async function EditApplicationPage({ params }: { params: Promise<
 
   return (
     <AppShell accountLabel={user.name || user.email} currentPath="/applications">
-      <PageHeader action={<ButtonLink href={`/applications/${application.id}`} variant="secondary">Cancel</ButtonLink>} eyebrow="Edit application" subtitle={`${application.company} • ${application.role}`} title="Edit application" />
+      <PageHeader action={<ButtonLink href={`/applications/${application.id}`} variant="secondary">{t("applications.edit.cancelButton")}</ButtonLink>} eyebrow={t("applications.edit.pageEyebrow")} subtitle={`${application.company} • ${application.role}`} title={t("applications.edit.pageTitle")} />
       <EditApplicationForm applicationId={application.id} cvs={cvs.map((cv) => ({ id: cv.id, name: cv.name }))} defaults={defaults} sources={sources} />
     </AppShell>
   );

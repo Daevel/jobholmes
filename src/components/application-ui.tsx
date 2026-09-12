@@ -3,17 +3,18 @@ import { BriefcaseBusiness, FileText, LayoutDashboard, Plus, Sparkles, Target, t
 import { signOutAction } from "@/lib/auth-actions";
 import type { applications } from "@/db/schema";
 import { formatDate, matchLabels, outcomeLabels, stageLabels } from "@/lib/applications/display";
+import { t } from "@/lib/i18n/translate";
 
 type Application = typeof applications.$inferSelect;
 type BadgeTone = "neutral" | "green" | "amber" | "red" | "blue" | "purple" | "orange";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, mobile: true },
-  { label: "Applications", href: "/applications", icon: BriefcaseBusiness, mobile: true },
-  { label: "AI Analyst", href: "/ai", icon: Sparkles, mobile: true },
-  { label: "Job Fit", href: "/job-fit", icon: Target, mobile: false },
-  { label: "CVs", href: "/cvs", icon: FileText, mobile: true },
-  { label: "Add application", href: "/applications/new", icon: Plus, mobile: false },
+  { label: t("common.nav.dashboard"), href: "/dashboard", icon: LayoutDashboard, mobile: true },
+  { label: t("common.nav.applications"), href: "/applications", icon: BriefcaseBusiness, mobile: true },
+  { label: t("common.nav.aiAnalyst"), href: "/ai", icon: Sparkles, mobile: true },
+  { label: t("common.nav.jobFit"), href: "/job-fit", icon: Target, mobile: false },
+  { label: t("common.nav.cvs"), href: "/cvs", icon: FileText, mobile: true },
+  { label: t("common.nav.addApplication"), href: "/applications/new", icon: Plus, mobile: false },
 ];
 
 const badgeClasses: Record<BadgeTone, string> = {
@@ -138,7 +139,7 @@ export function Badge({ children, tone }: { children: React.ReactNode; tone: Bad
 }
 
 export function AiMatchBadge({ value, percentage }: { value: Application["aiMatchClass"]; percentage: Application["aiMatchPercentage"] }) {
-  if (!value) return <Badge tone="neutral">Not analyzed</Badge>;
+  if (!value) return <Badge tone="neutral">{t("applications.matchStatus.notAnalyzed")}</Badge>;
   if (percentage === null) return <Badge tone={matchTones[value]}>{matchLabels[value]}</Badge>;
   return <Badge tone={matchTones[value]}>{matchLabels[value]} {percentage}%</Badge>;
 }
@@ -164,12 +165,12 @@ export function ApplicationMobileCard({ application }: { application: Applicatio
         <OutcomeBadge value={application.outcome} />
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <MobileMetric label="Country" value={application.country || "-"} />
-        <MobileMetric label="Applied" value={formatDate(application.appliedAt)} />
+        <MobileMetric label={t("applications.table.headers.country")} value={application.country || "-"} />
+        <MobileMetric label={t("applications.table.headers.applied")} value={formatDate(application.appliedAt)} />
       </dl>
       <div className="mt-4 flex flex-wrap gap-2">
         <StageBadge value={application.stage} />
-        <Badge tone={application.aiMatchClass ? matchTones[application.aiMatchClass] : "neutral"}>AI Match: {application.aiMatchClass && application.aiMatchPercentage !== null ? `${matchLabels[application.aiMatchClass]} · ${application.aiMatchPercentage}%` : "Not analyzed"}</Badge>
+        <Badge tone={application.aiMatchClass ? matchTones[application.aiMatchClass] : "neutral"}>{t("applications.detail.aiMatch.mobileCardPrefix")}{application.aiMatchClass && application.aiMatchPercentage !== null ? `${matchLabels[application.aiMatchClass]} · ${application.aiMatchPercentage}%` : t("applications.matchStatus.notAnalyzed")}</Badge>
       </div>
     </Link>
   );
@@ -204,10 +205,10 @@ function DesktopSidebar({ accountLabel, currentPath }: { accountLabel: string; c
         <LogoMark />
         <div>
           <p className="font-semibold tracking-[-0.02em] text-slate-950">JobHolmes</p>
-          <p className="text-xs text-slate-500">Track. Understand. Get hired.</p>
+          <p className="text-xs text-slate-500">{t("common.brand.tagline")}</p>
         </div>
       </Link>
-      <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label="Primary navigation">
+      <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label={t("common.nav.primary")}>
         {navItems.map((item) => (
           <NavItem key={item.href} currentPath={currentPath} {...item} />
         ))}
@@ -218,7 +219,7 @@ function DesktopSidebar({ accountLabel, currentPath }: { accountLabel: string; c
           <p className="truncate text-sm text-slate-600">{accountLabel}</p>
         </div>
         <form action={signOutAction} className="mt-3">
-          <Button variant="ghost" type="submit">Sign out</Button>
+          <Button variant="ghost" type="submit">{t("common.actions.signOut")}</Button>
         </form>
       </div>
     </aside>
@@ -239,7 +240,7 @@ function MobileHeader({ accountLabel }: { accountLabel: string }) {
 
 function MobileNavigation({ currentPath }: { currentPath: string }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur lg:hidden" aria-label="Mobile primary navigation">
+    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur lg:hidden" aria-label={t("common.nav.mobilePrimary")}>
         {navItems.filter((item) => item.mobile).map((item) => (
           <MobileNavItem key={item.href} currentPath={currentPath} {...item} />
         ))}

@@ -7,25 +7,14 @@ import { initialUpdateApplicationFormState, type UpdateApplicationFormState } fr
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
 import { determineCvRejectionPromptOptions } from "@/lib/applications/cv-rejection-prompt";
+import { outcomeLabels, stageLabels } from "@/lib/applications/display";
 import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
+import { t } from "@/lib/i18n/translate";
 
-const outcomeOptions = [
-  { value: "PENDING", label: "Pending" },
-  { value: "IN_PROGRESS", label: "In progress" },
-  { value: "REJECTED", label: "Rejected" },
-  { value: "WITHDRAWN", label: "Withdrawn" },
-  { value: "OFFER", label: "Offer" },
-] as const;
-
-const stageOptions = [
-  { value: "APPLICATION", label: "Application" },
-  { value: "RECRUITER_SCREENING", label: "Recruiter screening" },
-  { value: "HIRING_MANAGER", label: "Hiring manager" },
-  { value: "TECHNICAL", label: "Technical" },
-  { value: "CHALLENGE", label: "Challenge" },
-  { value: "FINAL", label: "Final" },
-  { value: "OFFER", label: "Offer" },
-] as const;
+// Reuses the i18n-sourced labels from display.ts instead of duplicating this exact enum/label
+// pairing a second time — order matches stageLabels/outcomeLabels (same order used for sorting).
+const outcomeOptions = Object.entries(outcomeLabels).map(([value, label]) => ({ value, label }));
+const stageOptions = Object.entries(stageLabels).map(([value, label]) => ({ value, label }));
 
 type FieldName = NonNullable<UpdateApplicationFormState["values"]> extends Partial<Record<infer Key, string>> ? Key : never;
 type CvOption = { id: string; name: string };
@@ -72,10 +61,10 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
     try {
       const response = await fetch(`/api/applications/${applicationId}/unlink-cv`, { method: "POST" });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not unlink the CV. Please try again.");
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : t("applications.edit.errors.unlinkCvFailed"));
       closeCvPrompt();
     } catch (unlinkError) {
-      setCvPromptError(unlinkError instanceof Error ? unlinkError.message : "Could not unlink the CV. Please try again.");
+      setCvPromptError(unlinkError instanceof Error ? unlinkError.message : t("applications.edit.errors.unlinkCvFailed"));
     } finally {
       setCvPromptBusy(false);
     }
@@ -89,10 +78,10 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
     try {
       const response = await fetch(`/api/cvs/${cvPrompt.cvDocumentId}`, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not delete the CV. Please try again.");
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : t("applications.edit.errors.deleteCvFailed"));
       closeCvPrompt();
     } catch (deleteError) {
-      setCvPromptError(deleteError instanceof Error ? deleteError.message : "Could not delete the CV. Please try again.");
+      setCvPromptError(deleteError instanceof Error ? deleteError.message : t("applications.edit.errors.deleteCvFailed"));
     } finally {
       setCvPromptBusy(false);
     }
@@ -104,29 +93,29 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
       {state.formError ? <p className={formStyles.formError}>{state.formError}</p> : null}
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Basic information</h2>
-        <p className={formStyles.sectionDescription}>Keep the core role information accurate and easy to scan.</p>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.sections.basicInfo.title")}</h2>
+        <p className={formStyles.sectionDescription}>{t("applications.edit.sections.basicInfo.description")}</p>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <Field label="Company" name="company" required state={state} values={values} />
-          <Field label="Role" name="role" required state={state} values={values} />
-          <Field label="Applied date" name="appliedAt" required state={state} type="date" values={values} />
+          <Field label={t("applications.form.company.label")} name="company" required state={state} values={values} />
+          <Field label={t("applications.form.role.label")} name="role" required state={state} values={values} />
+          <Field label={t("applications.form.appliedDate.label")} name="appliedAt" required state={state} type="date" values={values} />
           <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
-          {!remoteOnly ? <Field label="Country" name="country" required state={state} values={values} /> : null}
-          {!remoteOnly ? <Field label="City" name="city" state={state} values={values} /> : null}
-          <Field label="Work mode" name="workMode" state={state} values={values} />
+          {!remoteOnly ? <Field label={t("applications.form.country.label")} name="country" required state={state} values={values} /> : null}
+          {!remoteOnly ? <Field label={t("applications.form.city.label")} name="city" state={state} values={values} /> : null}
+          <Field label={t("applications.form.workMode.label")} name="workMode" state={state} values={values} />
           <SourceField defaultValue={values.source} ref={sourceFieldRef} sources={sources} />
-          <Field label="Vacancy URL" name="vacancyUrl" state={state} type="url" values={values} />
-          <Field label="Role category" name="roleCategory" state={state} values={values} />
-          <Field label="Seniority" name="seniority" state={state} values={values} />
+          <Field label={t("applications.form.vacancyUrl.label")} name="vacancyUrl" state={state} type="url" values={values} />
+          <Field label={t("applications.form.roleCategory.label")} name="roleCategory" state={state} values={values} />
+          <Field label={t("applications.form.seniority.label")} name="seniority" state={state} values={values} />
           <CvSelect cvs={cvs} values={values} state={state} />
         </div>
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Job description</h2>
-        <p className={formStyles.sectionDescription}>Add or correct the job description used for AI Match. Changing the JD requires re-analysis.</p>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.sections.jobDescription.title")}</h2>
+        <p className={formStyles.sectionDescription}>{t("applications.edit.sections.jobDescription.description")}</p>
         <div className="mt-5">
-          <TextareaField label="Job description" name="jdText" state={state} values={values} />
+          <TextareaField label={t("applications.form.jobDescription.label")} name="jdText" state={state} values={values} />
           <EnrichmentButton
             onRemoteOnlySuggestion={() => {
               if (!remoteOnly) setRemoteOnly(true);
@@ -137,37 +126,37 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Employment details</h2>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.sections.employmentDetails.title")}</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <Field label="Work authorization" name="workAuthorization" state={state} values={values} />
+          <Field label={t("applications.form.workAuthorization.label")} name="workAuthorization" state={state} values={values} />
           <SponsorshipField state={state} values={values} />
-          <Field label="Salary min" name="salaryMin" state={state} type="number" values={values} />
-          <Field label="Salary max" name="salaryMax" state={state} type="number" values={values} />
-          <Field label="Currency" name="currency" state={state} values={values} />
+          <Field label={t("applications.form.salaryMin.label")} name="salaryMin" state={state} type="number" values={values} />
+          <Field label={t("applications.form.salaryMax.label")} name="salaryMax" state={state} type="number" values={values} />
+          <Field label={t("applications.form.currency.label")} name="currency" state={state} values={values} />
         </div>
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Application status</h2>
+        <h2 className={formStyles.sectionTitle}>{t("applications.edit.sections.applicationStatus.title")}</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
-          <SelectField label="Outcome" name="outcome" onChange={(event) => setOutcome(event.target.value)} options={outcomeOptions} state={state} values={values} />
-          <SelectField label="Stage" name="stage" options={stageOptions} state={state} values={values} />
-          <Field label="Response date" name="responseAt" state={state} type="date" values={values} />
-          <TextareaField className="md:col-span-3" label="Stage context" name="stageContext" state={state} values={values} />
-          {shouldShowRejectionReason(outcome) ? <TextareaField className="md:col-span-3" label="Rejection reason" name="rejectionReason" state={state} values={values} /> : null}
+          <SelectField label={t("applications.form.outcome.label")} name="outcome" onChange={(event) => setOutcome(event.target.value)} options={outcomeOptions} state={state} values={values} />
+          <SelectField label={t("applications.form.stage.label")} name="stage" options={stageOptions} state={state} values={values} />
+          <Field label={t("applications.form.responseDate.label")} name="responseAt" state={state} type="date" values={values} />
+          <TextareaField className="md:col-span-3" label={t("applications.form.stageContext.label")} name="stageContext" state={state} values={values} />
+          {shouldShowRejectionReason(outcome) ? <TextareaField className="md:col-span-3" label={t("applications.form.rejectionReason.label")} name="rejectionReason" state={state} values={values} /> : null}
         </div>
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Notes</h2>
+        <h2 className={formStyles.sectionTitle}>{t("applications.sections.notes.title")}</h2>
         <div className="mt-5">
-          <TextareaField label="Notes" name="notes" state={state} values={values} />
+          <TextareaField label={t("applications.sections.notes.title")} name="notes" state={state} values={values} />
         </div>
       </section>
 
       <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
-        <ButtonLink href={`/applications/${applicationId}`} variant="secondary">Cancel</ButtonLink>
-        <Button disabled={pending} type="submit">{pending ? "Saving..." : "Save changes"}</Button>
+        <ButtonLink href={`/applications/${applicationId}`} variant="secondary">{t("common.actions.cancel")}</ButtonLink>
+        <Button disabled={pending} type="submit">{pending ? t("common.actions.saving") : t("applications.edit.submitButton")}</Button>
       </div>
     </form>
 
@@ -217,8 +206,8 @@ function CvRejectionDialog({
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <h2 className="text-base font-semibold text-slate-950" id="cv-rejection-title">This application was marked Rejected</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">What should happen to the CV attached to it?</p>
+        <h2 className="text-base font-semibold text-slate-950" id="cv-rejection-title">{t("applications.edit.cvRejection.title")}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{t("applications.edit.cvRejection.description")}</p>
         {error ? <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
         <div className="mt-5 flex flex-col gap-2">
           <button
@@ -227,7 +216,7 @@ function CvRejectionDialog({
             onClick={onKeep}
             type="button"
           >
-            Keep the CV
+            {t("applications.edit.cvRejection.keep")}
           </button>
           <button
             className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
@@ -235,7 +224,7 @@ function CvRejectionDialog({
             onClick={onUnlink}
             type="button"
           >
-            {busy ? "Working..." : "Unlink from this application"}
+            {busy ? t("applications.edit.cvRejection.working") : t("applications.edit.cvRejection.unlink")}
           </button>
           <button
             className="inline-flex min-h-10 flex-col items-center justify-center gap-0.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white outline-none transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
@@ -243,7 +232,7 @@ function CvRejectionDialog({
             onClick={onDelete}
             type="button"
           >
-            <span>{busy ? "Working..." : "Delete permanently"}</span>
+            <span>{busy ? t("applications.edit.cvRejection.working") : t("applications.edit.cvRejection.deletePermanently")}</span>
             {!options.deletePermanently.available && options.deletePermanently.disabledReason ? (
               <span className="text-xs font-normal">{options.deletePermanently.disabledReason}</span>
             ) : null}
@@ -259,13 +248,13 @@ function CvSelect({ cvs, state, values }: { cvs: CvOption[]; state: UpdateApplic
 
   return (
     <label className={formStyles.label}>
-      CV used
+      {t("applications.form.cv.label")}
       <select className={formStyles.input} defaultValue={values.cvDocumentId ?? ""} name="cvDocumentId">
-        <option value="">No CV selected</option>
+        <option value="">{t("applications.form.cv.noneOption")}</option>
         {cvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
       </select>
-      {values.legacyCvVersion ? <span className="mt-2 block text-xs text-slate-500">Legacy CV value: {values.legacyCvVersion}</span> : null}
-      {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">No CVs uploaded yet. <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">Upload a CV</a> to enable AI Match.</span> : null}
+      {values.legacyCvVersion ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.legacyValuePrefix")} {values.legacyCvVersion}</span> : null}
+      {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.noCvsUploadedPrefix")} <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">{t("applications.form.cv.uploadCvLinkText")}</a> {t("applications.form.cv.uploadCvSuffix")}</span> : null}
       {error ? <span className={formStyles.error}>{error}</span> : null}
     </label>
   );
@@ -273,7 +262,7 @@ function CvSelect({ cvs, state, values }: { cvs: CvOption[]; state: UpdateApplic
 
 function SponsorshipField({ state, values }: { state: UpdateApplicationFormState; values: EditDefaults }) {
   const error = getError(state, "sponsorshipRequired");
-  return <label className={formStyles.label}>Sponsorship required<select className={formStyles.input} defaultValue={values.sponsorshipRequired ?? "unknown"} name="sponsorshipRequired"><option value="unknown">Unknown</option><option value="false">No</option><option value="true">Yes</option></select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
+  return <label className={formStyles.label}>{t("applications.form.sponsorship.label")}<select className={formStyles.input} defaultValue={values.sponsorshipRequired ?? "unknown"} name="sponsorshipRequired"><option value="unknown">{t("applications.form.sponsorship.options.unknown")}</option><option value="false">{t("applications.form.sponsorship.options.no")}</option><option value="true">{t("applications.form.sponsorship.options.yes")}</option></select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
 }
 
 function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
@@ -286,7 +275,7 @@ function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (c
         onChange={(event) => onChange(event.target.checked)}
         type="checkbox"
       />
-      Remote only
+      {t("applications.form.remoteOnly.label")}
     </label>
   );
 }
@@ -316,7 +305,7 @@ function EnrichmentButton({ sourceFieldRef, onRemoteOnlySuggestion }: { sourceFi
     }
   }
 
-  return <button className="mt-3 text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" onClick={extractDetails} type="button">Extract details from JD</button>;
+  return <button className="mt-3 text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" onClick={extractDetails} type="button">{t("applications.form.enrichment.buttonLabel")}</button>;
 }
 
 function Field({ state, values, label, name, ...props }: { state: UpdateApplicationFormState; values: NonNullable<UpdateApplicationFormState["values"]>; label: string; name: FieldName } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "defaultValue" | "name">) {
@@ -326,7 +315,7 @@ function Field({ state, values, label, name, ...props }: { state: UpdateApplicat
 
 function SelectField({ state, values, label, name, options, onChange }: { state: UpdateApplicationFormState; values: NonNullable<UpdateApplicationFormState["values"]>; label: string; name: FieldName; options: readonly { value: string; label: string }[]; onChange?: React.ChangeEventHandler<HTMLSelectElement> }) {
   const error = getError(state, name);
-  return <label className={formStyles.label}>{label}<select className={formStyles.input} defaultValue={values[name] ?? ""} name={name} onChange={onChange}><option value="">Select...</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
+  return <label className={formStyles.label}>{label}<select className={formStyles.input} defaultValue={values[name] ?? ""} name={name} onChange={onChange}><option value="">{t("applications.form.selectPlaceholder")}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>{error ? <span className={formStyles.error}>{error}</span> : null}</label>;
 }
 
 function TextareaField({ state, values, label, name, className = "" }: { state: UpdateApplicationFormState; values: NonNullable<UpdateApplicationFormState["values"]>; label: string; name: FieldName; className?: string }) {

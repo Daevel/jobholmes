@@ -7,6 +7,7 @@ import { saveSourceForUser } from "@/lib/applications/sources-service";
 import { countApplicationsUsingCv } from "@/lib/cvs/service";
 import { requireCurrentUser } from "@/lib/current-user";
 import { syncUpdatedApplicationToGoogleSheet } from "@/lib/google/sheets";
+import { t } from "@/lib/i18n/translate";
 import type { UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
 
 export async function updateApplicationAction(
@@ -55,7 +56,7 @@ export async function updateApplicationAction(
     }
   } catch {
     return {
-      formError: "Could not update application. Please try again.",
+      formError: t("applications.edit.errors.updateFailed"),
       values: getStringValues(rawValues),
     };
   }

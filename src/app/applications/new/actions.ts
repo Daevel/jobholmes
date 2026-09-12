@@ -4,6 +4,7 @@ import { createApplicationSchema } from "@/lib/applications/schema";
 import { createApplicationForUser } from "@/lib/applications/service";
 import { saveSourceForUser } from "@/lib/applications/sources-service";
 import { requireCurrentUser } from "@/lib/current-user";
+import { t } from "@/lib/i18n/translate";
 import { syncApplicationToGoogleSheet } from "@/lib/google/sheets";
 import { redirect } from "next/navigation";
 import type { CreateApplicationFormState } from "./form-state";
@@ -45,7 +46,7 @@ export async function createApplicationAction(
     }
   } catch {
     return {
-      formError: "Could not create application. Please try again.",
+      formError: t("applications.new.errors.createFailed"),
       values: getStringValues(rawValues),
     };
   }

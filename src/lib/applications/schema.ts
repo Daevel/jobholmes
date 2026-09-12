@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { t } from "@/lib/i18n/translate";
 
 const matchClasses = ["A_STRONG", "B_STRETCH", "C_LONG_SHOT"] as const;
 const applicationOutcomes = ["PENDING", "IN_PROGRESS", "REJECTED", "WITHDRAWN", "OFFER"] as const;
@@ -28,9 +29,9 @@ const checkboxBoolean = z.preprocess((value) => {
 
 export const baseApplicationFields = z
   .object({
-    appliedAt: z.coerce.date({ error: "Applied date is required" }),
-    company: z.string().trim().min(1, "Company is required").max(255),
-    role: z.string().trim().min(1, "Role is required").max(255),
+    appliedAt: z.coerce.date({ error: t("applications.validation.appliedDateRequired") }),
+    company: z.string().trim().min(1, t("applications.validation.companyRequired")).max(255),
+    role: z.string().trim().min(1, t("applications.validation.roleRequired")).max(255),
     roleCategory: optionalTrimmedString(120),
     seniority: optionalTrimmedString(80),
     country: optionalTrimmedString(120),
@@ -38,7 +39,7 @@ export const baseApplicationFields = z
     remoteOnly: checkboxBoolean,
     workMode: optionalTrimmedString(40),
     source: optionalTrimmedString(80),
-    vacancyUrl: z.preprocess(emptyToUndefined, z.url("Enter a valid vacancy URL").optional()),
+    vacancyUrl: z.preprocess(emptyToUndefined, z.url(t("applications.validation.invalidVacancyUrl")).optional()),
     cvDocumentId: optionalUuid,
     jdText: optionalText,
     workAuthorization: optionalTrimmedString(120),
@@ -60,7 +61,7 @@ export function validateApplicationLocationFields(data: { country?: string; city
   if (!data.remoteOnly && !data.country) {
     ctx.addIssue({
       code: "custom",
-      message: "Country is required unless Remote only is selected",
+      message: t("applications.validation.countryRequiredUnlessRemoteOnly"),
       path: ["country"],
     });
   }
@@ -75,7 +76,7 @@ export function clearLocationWhenRemoteOnly<T extends { country?: string; city?:
 
 export const createApplicationSchema = baseApplicationFields
   .refine((input) => !input.salaryMin || !input.salaryMax || input.salaryMax >= input.salaryMin, {
-    message: "Salary max must not be lower than salary min",
+    message: t("applications.validation.salaryMaxBelowMin"),
     path: ["salaryMax"],
   })
   .superRefine(validateApplicationLocationFields)
@@ -101,7 +102,7 @@ export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;
 const legacyManualMatchFields = z
   .object({
     userMatchClass: z.preprocess(emptyToUndefined, z.enum(matchClasses).optional()),
-    userMatchPercentage: z.preprocess(emptyToUndefined, z.coerce.number().int("Match percentage must be an integer").min(0).max(100).optional()),
+    userMatchPercentage: z.preprocess(emptyToUndefined, z.coerce.number().int(t("applications.validation.matchPercentageMustBeInteger")).min(0).max(100).optional()),
   })
   .strict()
   .extend({
@@ -114,7 +115,7 @@ const legacyManualMatchFields = z
 export const legacyApplicationImportSchema = baseApplicationFields
   .merge(legacyManualMatchFields)
   .refine((input) => !input.salaryMin || !input.salaryMax || input.salaryMax >= input.salaryMin, {
-    message: "Salary max must not be lower than salary min",
+    message: t("applications.validation.salaryMaxBelowMin"),
     path: ["salaryMax"],
   });
 export type LegacyApplicationImportInput = z.infer<typeof legacyApplicationImportSchema>;

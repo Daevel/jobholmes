@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { AI_MATCH_UNANALYZED } from "@/lib/applications/ai-match";
 import { matchLabels, stageLabels } from "@/lib/applications/display";
+import { t } from "@/lib/i18n/translate";
 
 const SEARCH_DEBOUNCE_MS = 350;
 
@@ -52,39 +53,39 @@ export function ApplicationsFilters({ children }: { children: React.ReactNode })
     <>
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:grid-cols-[1fr_180px_180px]">
         <label className="text-sm font-medium text-slate-700">
-          Search company or role
+          {t("applications.filters.searchLabel")}
           <input
-            aria-label="Search company or role"
+            aria-label={t("applications.filters.searchLabel")}
             className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100"
             onChange={handleSearchChange}
-            placeholder="Company or role"
+            placeholder={t("applications.filters.searchPlaceholder")}
             type="search"
             value={searchValue}
           />
         </label>
         <label className="text-sm font-medium text-slate-700">
-          Stage
+          {t("applications.filters.stageLabel")}
           <select
-            aria-label="Filter by stage"
+            aria-label={t("applications.filters.stageAriaLabel")}
             className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100"
             onChange={(event) => updateSearchParams({ stage: event.target.value || null })}
             value={selectedStage}
           >
-            <option value="">Any stage</option>
+            <option value="">{t("applications.filters.anyStage")}</option>
             {Object.entries(stageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
         <label className="text-sm font-medium text-slate-700">
-          AI Match
+          {t("applications.filters.matchLabel")}
           <select
-            aria-label="Filter by AI match"
+            aria-label={t("applications.filters.matchAriaLabel")}
             className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100"
             onChange={(event) => updateSearchParams({ match: event.target.value || null })}
             value={selectedMatch}
           >
-            <option value="">Any AI match</option>
+            <option value="">{t("applications.filters.anyMatch")}</option>
             {Object.entries(matchLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            <option value={AI_MATCH_UNANALYZED}>Not analyzed</option>
+            <option value={AI_MATCH_UNANALYZED}>{t("applications.matchStatus.notAnalyzed")}</option>
           </select>
         </label>
       </div>

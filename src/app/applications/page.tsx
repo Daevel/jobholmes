@@ -6,13 +6,14 @@ import { AI_MATCH_UNANALYZED, matchesAiMatchFilter, type AiMatchFilter } from "@
 import { listApplicationsForUser } from "@/lib/applications/service";
 import { isSortDirection, isSortField, type SortDirection, type SortField } from "@/lib/applications/sort-order";
 import { requireCurrentUser } from "@/lib/current-user";
+import { t } from "@/lib/i18n/translate";
 import { ApplicationsFilters } from "@/app/applications/applications-filters";
 
 const filterOptions = [
-  { label: "All", href: "/applications", value: null },
-  { label: "In progress", href: "/applications?outcome=IN_PROGRESS", value: "IN_PROGRESS" },
-  { label: "Rejected", href: "/applications?outcome=REJECTED", value: "REJECTED" },
-  { label: "Offer", href: "/applications?outcome=OFFER", value: "OFFER" },
+  { label: t("applications.filters.all"), href: "/applications", value: null },
+  { label: t("applications.filters.inProgress"), href: "/applications?outcome=IN_PROGRESS", value: "IN_PROGRESS" },
+  { label: t("applications.filters.rejected"), href: "/applications?outcome=REJECTED", value: "REJECTED" },
+  { label: t("applications.filters.offer"), href: "/applications?outcome=OFFER", value: "OFFER" },
 ] as const;
 
 export default async function ApplicationsPage({ searchParams }: { searchParams?: Promise<{ outcome?: string; q?: string; stage?: string; match?: string; sort?: string; dir?: string }> }) {
@@ -36,9 +37,9 @@ export default async function ApplicationsPage({ searchParams }: { searchParams?
 
   return (
     <AppShell accountLabel={user.name || user.email} contentSize="wide" currentPath="/applications">
-      <PageHeader action={<ButtonLink href="/applications/new">+ Add application</ButtonLink>} subtitle="All your job applications in one place." title="Applications" />
+      <PageHeader action={<ButtonLink href="/applications/new">{t("applications.list.addApplicationCta")}</ButtonLink>} subtitle={t("applications.list.pageSubtitle")} title={t("applications.list.pageTitle")} />
 
-      <section className="flex flex-wrap gap-2" aria-label="Application status filters">
+      <section className="flex flex-wrap gap-2" aria-label={t("applications.filters.statusFiltersAriaLabel")}>
         {filterOptions.map((option) => (
           <Link key={option.label} className={`rounded-lg border px-3 py-2 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-500 ${selectedOutcome === option.value ? "border-indigo-200 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950"}`} href={option.href}>
             {option.label}
@@ -48,7 +49,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams?
 
       <ApplicationsFilters>
         {visibleApplications.length === 0 ? (
-          <EmptyState action={<ButtonLink href="/applications/new">Add application</ButtonLink>} description="Add a new application or switch filters to see more tracked roles." title="No applications found" />
+          <EmptyState action={<ButtonLink href="/applications/new">{t("applications.list.emptyState.action")}</ButtonLink>} description={t("applications.list.emptyState.description")} title={t("applications.list.emptyState.title")} />
         ) : (
           <ApplicationsTable applications={visibleApplications} preservedParams={preservedParams} sortDirection={sortDirection} sortField={sortField} />
         )}
@@ -74,13 +75,13 @@ function ApplicationsTable({
         <table className="w-full table-fixed border-collapse text-left text-sm">
           <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
             <tr>
-              <SortableHeader className="w-[27%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="company" label="Company" preservedParams={preservedParams} />
-              <th className="w-[12%] px-3 py-3">Country</th>
-              <SortableHeader className="w-[12%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="appliedAt" label="Applied" preservedParams={preservedParams} />
-              <SortableHeader className="w-[13%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="stage" label="Stage" preservedParams={preservedParams} />
-              <SortableHeader className="w-[11%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="outcome" label="Outcome" preservedParams={preservedParams} />
-              <SortableHeader className="w-[13%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="aiMatch" label="AI Match" preservedParams={preservedParams} />
-              <th className="w-[6%] px-3 py-3">Actions</th>
+              <SortableHeader className="w-[27%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="company" label={t("applications.table.headers.company")} preservedParams={preservedParams} />
+              <th className="w-[12%] px-3 py-3">{t("applications.table.headers.country")}</th>
+              <SortableHeader className="w-[12%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="appliedAt" label={t("applications.table.headers.applied")} preservedParams={preservedParams} />
+              <SortableHeader className="w-[13%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="stage" label={t("applications.table.headers.stage")} preservedParams={preservedParams} />
+              <SortableHeader className="w-[11%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="outcome" label={t("applications.table.headers.outcome")} preservedParams={preservedParams} />
+              <SortableHeader className="w-[13%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="aiMatch" label={t("applications.table.headers.aiMatch")} preservedParams={preservedParams} />
+              <th className="w-[6%] px-3 py-3">{t("applications.table.headers.actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -97,7 +98,7 @@ function ApplicationsTable({
                 <td className="px-3 py-4"><StageBadge value={application.stage} /></td>
                 <td className="px-3 py-4"><OutcomeBadge value={application.outcome} /></td>
                 <td className="px-3 py-4"><AiMatchBadge percentage={application.aiMatchPercentage} value={application.aiMatchClass} /></td>
-                <td className="px-3 py-4"><Link className="text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" href={`/applications/${application.id}`}>View</Link></td>
+                <td className="px-3 py-4"><Link className="text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" href={`/applications/${application.id}`}>{t("applications.table.viewAction")}</Link></td>
               </tr>
             ))}
           </tbody>

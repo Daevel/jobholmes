@@ -1,29 +1,33 @@
 import type { applications } from "@/db/schema";
+import { t } from "@/lib/i18n/translate";
 
 type Application = typeof applications.$inferSelect;
 
+// Labels come from the i18n catalog (src/lib/i18n/locales/en.ts); the object keys below must stay
+// exactly the enum values from src/db/schema.ts, in this exact order — src/lib/applications/
+// sort-order.ts derives the funnel sort order from Object.keys() of stageLabels/outcomeLabels.
 export const matchLabels = {
-  A_STRONG: "Strong",
-  B_STRETCH: "Stretch",
-  C_LONG_SHOT: "Long shot",
+  A_STRONG: t("applications.match.A_STRONG"),
+  B_STRETCH: t("applications.match.B_STRETCH"),
+  C_LONG_SHOT: t("applications.match.C_LONG_SHOT"),
 } as const;
 
 export const outcomeLabels = {
-  PENDING: "Pending",
-  IN_PROGRESS: "In progress",
-  REJECTED: "Rejected",
-  WITHDRAWN: "Withdrawn",
-  OFFER: "Offer",
+  PENDING: t("applications.outcome.PENDING"),
+  IN_PROGRESS: t("applications.outcome.IN_PROGRESS"),
+  REJECTED: t("applications.outcome.REJECTED"),
+  WITHDRAWN: t("applications.outcome.WITHDRAWN"),
+  OFFER: t("applications.outcome.OFFER"),
 } as const;
 
 export const stageLabels = {
-  APPLICATION: "Application",
-  RECRUITER_SCREENING: "Recruiter screening",
-  HIRING_MANAGER: "Hiring manager",
-  TECHNICAL: "Technical",
-  CHALLENGE: "Challenge",
-  FINAL: "Final",
-  OFFER: "Offer",
+  APPLICATION: t("applications.stage.APPLICATION"),
+  RECRUITER_SCREENING: t("applications.stage.RECRUITER_SCREENING"),
+  HIRING_MANAGER: t("applications.stage.HIRING_MANAGER"),
+  TECHNICAL: t("applications.stage.TECHNICAL"),
+  CHALLENGE: t("applications.stage.CHALLENGE"),
+  FINAL: t("applications.stage.FINAL"),
+  OFFER: t("applications.stage.OFFER"),
 } as const;
 
 export const dateFormatter = new Intl.DateTimeFormat("en", {
