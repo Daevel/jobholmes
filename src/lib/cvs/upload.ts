@@ -3,6 +3,7 @@ import "server-only";
 import { extractPdfText } from "@/lib/cvs/pdf";
 import { insertCvForUser, CV_MAX_FILE_SIZE_BYTES } from "@/lib/cvs/service";
 import { uploadPrivateCvPdf } from "@/lib/cvs/storage";
+import { t } from "@/lib/i18n/translate";
 
 export async function createCvForUser({ userId, name, file }: { userId: string; name: string; file: File }) {
   validatePdf(file);
@@ -29,15 +30,15 @@ function validatePdf(file: File) {
   const typeIsPdf = file.type === "application/pdf" || file.type === "application/octet-stream";
 
   if (!extensionIsPdf || !typeIsPdf) {
-    throw new Error("Only PDF files are supported.");
+    throw new Error(t("cvs.upload.errors.onlyPdfSupported"));
   }
 
   if (file.size <= 0) {
-    throw new Error("Upload a valid PDF file.");
+    throw new Error(t("cvs.upload.errors.invalidPdf"));
   }
 
   if (file.size > CV_MAX_FILE_SIZE_BYTES) {
-    throw new Error("PDF files must be 5 MB or smaller.");
+    throw new Error(t("cvs.upload.errors.fileTooLarge"));
   }
 }
 

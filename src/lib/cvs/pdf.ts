@@ -1,5 +1,7 @@
 import "server-only";
 
+import { t } from "@/lib/i18n/translate";
+
 export async function extractPdfText(bytes: Buffer) {
   const { CanvasFactory } = await import("pdf-parse/worker");
   const { PDFParse } = await import("pdf-parse");
@@ -14,7 +16,7 @@ export async function extractPdfText(bytes: Buffer) {
   }
 
   if (text.length < 50) {
-    throw new Error("We could not extract readable text from this PDF. Please upload a text-based PDF.");
+    throw new Error(t("cvs.upload.errors.noReadableText"));
   }
 
   return text;

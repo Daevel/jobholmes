@@ -4,6 +4,7 @@ import { AiMatchBadge, AppShell, ApplicationMobileCard, ButtonLink, EmptyState, 
 import { formatDate } from "@/lib/applications/display";
 import { getApplicationStatsForUser, getRecentApplicationsForUser, type ApplicationStats, type RecentApplication } from "@/lib/applications/service";
 import { requireCurrentUser } from "@/lib/current-user";
+import { t } from "@/lib/i18n/translate";
 
 const currentDate = new Intl.DateTimeFormat("en", { weekday: "long", month: "short", day: "numeric" });
 
@@ -14,17 +15,17 @@ export default async function DashboardPage() {
   return (
     <AppShell accountLabel={user.name || user.email} currentPath="/dashboard">
       <PageHeader
-        action={<ButtonLink href="/applications/new">+ Add application</ButtonLink>}
+        action={<ButtonLink href="/applications/new">{t("applications.list.addApplicationCta")}</ButtonLink>}
         meta={currentDate.format(new Date())}
-        subtitle="Here's an overview of your job search."
-        title="Job Search Overview"
+        subtitle={t("dashboard.pageSubtitle")}
+        title={t("dashboard.pageTitle")}
       />
 
       <PrimaryMetrics stats={stats} />
       <SecondaryMetrics stats={stats} />
 
       {stats.total === 0 ? (
-        <EmptyState action={<ButtonLink href="/applications/new">Add application</ButtonLink>} description="Start tracking your job search by adding your first application." title="No applications yet" />
+        <EmptyState action={<ButtonLink href="/applications/new">{t("applications.list.emptyState.action")}</ButtonLink>} description={t("dashboard.emptyState.description")} title={t("dashboard.emptyState.title")} />
       ) : (
         <RecentApplications applications={recentApplications} />
       )}
@@ -34,14 +35,14 @@ export default async function DashboardPage() {
 
 function PrimaryMetrics({ stats }: { stats: ApplicationStats }) {
   const kpis = [
-    { label: "Total applications", value: stats.total, tone: "blue", icon: <TrendingUp aria-hidden="true" className="h-4 w-4" /> },
-    { label: "In progress", value: stats.inProgress, tone: "blue", icon: <CircleGauge aria-hidden="true" className="h-4 w-4" /> },
-    { label: "Strong AI matches", value: stats.strongMatches, tone: "green", icon: <Check aria-hidden="true" className="h-4 w-4" /> },
-    { label: "Rejected", value: stats.rejected, tone: "red", icon: <CircleX aria-hidden="true" className="h-4 w-4" /> },
+    { label: t("dashboard.metrics.totalApplications"), value: stats.total, tone: "blue", icon: <TrendingUp aria-hidden="true" className="h-4 w-4" /> },
+    { label: t("dashboard.metrics.inProgress"), value: stats.inProgress, tone: "blue", icon: <CircleGauge aria-hidden="true" className="h-4 w-4" /> },
+    { label: t("metrics.strongAiMatches"), value: stats.strongMatches, tone: "green", icon: <Check aria-hidden="true" className="h-4 w-4" /> },
+    { label: t("metrics.rejected"), value: stats.rejected, tone: "red", icon: <CircleX aria-hidden="true" className="h-4 w-4" /> },
   ] as const;
 
   return (
-    <section aria-label="Primary dashboard metrics" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section aria-label={t("dashboard.primaryMetricsAriaLabel")} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {kpis.map((kpi) => <MetricCard key={kpi.label} {...kpi} />)}
     </section>
   );
@@ -49,27 +50,27 @@ function PrimaryMetrics({ stats }: { stats: ApplicationStats }) {
 
 function SecondaryMetrics({ stats }: { stats: ApplicationStats }) {
   return (
-    <section aria-label="Secondary dashboard metrics" className="grid gap-3 sm:grid-cols-3">
-      <SecondaryMetric label="Stretch AI matches" tone="purple" value={stats.stretchMatches} />
-      <SecondaryMetric label="AI long shots" tone="orange" value={stats.longShotMatches} />
-      <SecondaryMetric label="Offers" tone="green" value={stats.offers} />
+    <section aria-label={t("dashboard.secondaryMetricsAriaLabel")} className="grid gap-3 sm:grid-cols-3">
+      <SecondaryMetric label={t("dashboard.metrics.stretchAiMatches")} tone="purple" value={stats.stretchMatches} />
+      <SecondaryMetric label={t("dashboard.metrics.aiLongShots")} tone="orange" value={stats.longShotMatches} />
+      <SecondaryMetric label={t("metrics.offers")} tone="green" value={stats.offers} />
     </section>
   );
 }
 
 function RecentApplications({ applications }: { applications: RecentApplication[] }) {
   return (
-    <SectionCard action={<Link className="text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" href="/applications">View all &gt;</Link>} description="Latest applications by applied date." title="Recent applications">
+    <SectionCard action={<Link className="text-sm font-semibold text-indigo-600 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500" href="/applications">{t("dashboard.recentApplications.viewAllLink")}</Link>} description={t("dashboard.recentApplications.description")} title={t("dashboard.recentApplications.title")}>
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full table-fixed border-collapse text-left text-sm">
           <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
             <tr>
-              <th className="w-[24%] px-5 py-3">Company</th>
-              <th className="w-[24%] px-5 py-3">Role</th>
-              <th className="w-[13%] px-5 py-3">Applied</th>
-              <th className="w-[15%] px-5 py-3">Stage</th>
-              <th className="w-[12%] px-5 py-3">Outcome</th>
-              <th className="w-[12%] px-5 py-3">AI Match</th>
+              <th className="w-[24%] px-5 py-3">{t("applications.table.headers.company")}</th>
+              <th className="w-[24%] px-5 py-3">{t("dashboard.table.headers.role")}</th>
+              <th className="w-[13%] px-5 py-3">{t("applications.table.headers.applied")}</th>
+              <th className="w-[15%] px-5 py-3">{t("applications.table.headers.stage")}</th>
+              <th className="w-[12%] px-5 py-3">{t("applications.table.headers.outcome")}</th>
+              <th className="w-[12%] px-5 py-3">{t("applications.table.headers.aiMatch")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

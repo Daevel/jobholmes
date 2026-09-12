@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { aiConversations, aiMessages } from "@/db/schema";
 import { getOpenAIClient } from "@/lib/ai/client";
 import { selectOpenaiResponseIdsToDelete } from "@/lib/ai/response-cleanup";
+import { t } from "@/lib/i18n/translate";
 
 export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
@@ -21,7 +22,7 @@ export function listConversationsForUser(userId: string) {
     .orderBy(desc(aiConversations.updatedAt));
 }
 
-export async function createConversationForUser(userId: string, title = "Job search analysis") {
+export async function createConversationForUser(userId: string, title = t("aiAnalyst.defaultConversationTitle")) {
   const [conversation] = await db
     .insert(aiConversations)
     .values({

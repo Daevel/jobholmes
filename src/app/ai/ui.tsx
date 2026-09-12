@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Trash2 } from "lucide-react";
+import { t } from "@/lib/i18n/translate";
 
 export type AiFunnelSnapshot = {
   applications: number;
@@ -30,11 +31,11 @@ export type AiAnalystMessage = {
 };
 
 const suggestedQuestions = [
-  "Where is my funnel bottleneck?",
-  "How are my Strong applications performing?",
-  "What patterns do you see in my rejections?",
-  "Am I applying to too many Stretch roles?",
-  "What should I change in my application strategy?",
+  t("aiAnalyst.suggestedQuestions.q1"),
+  t("aiAnalyst.suggestedQuestions.q2"),
+  t("aiAnalyst.suggestedQuestions.q3"),
+  t("aiAnalyst.suggestedQuestions.q4"),
+  t("aiAnalyst.suggestedQuestions.q5"),
 ];
 
 export function AiAnalystClient({
@@ -74,11 +75,11 @@ export function AiAnalystClient({
 
     try {
       const response = await fetch(`/api/ai/conversations/${conversationId}/messages`);
-      if (!response.ok) throw new Error("Could not load messages.");
+      if (!response.ok) throw new Error(t("aiAnalyst.errors.loadMessagesFailed"));
       const data = (await response.json()) as { messages: AiAnalystMessage[] };
       setMessages(data.messages);
     } catch {
-      setError("Could not load that analysis. Please try again.");
+      setError(t("aiAnalyst.errors.loadAnalysisFailed"));
     } finally {
       setIsLoadingMessages(false);
     }
@@ -90,14 +91,14 @@ export function AiAnalystClient({
 
     try {
       const response = await fetch("/api/ai/conversations", { method: "POST" });
-      if (!response.ok) throw new Error("Could not create analysis.");
+      if (!response.ok) throw new Error(t("aiAnalyst.errors.createAnalysisFailed"));
       const data = (await response.json()) as { conversation: AiAnalystConversation };
       const conversation = { id: data.conversation.id, title: data.conversation.title, updatedAt: data.conversation.updatedAt };
       setConversations((current) => [conversation, ...current]);
       setSelectedConversationId(conversation.id);
       setMessages([]);
     } catch {
-      setError("Could not create a new analysis. Please try again.");
+      setError(t("aiAnalyst.errors.createAnalysisFailedRetry"));
     }
   }
 
@@ -111,7 +112,7 @@ export function AiAnalystClient({
     try {
       const response = await fetch(`/api/ai/conversations/${conversationToDelete.id}`, { method: "DELETE" });
       const data = await response.json();
-      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not delete analysis. Please try again.");
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : t("aiAnalyst.errors.deleteAnalysisFailed"));
 
       setConversations((current) => current.filter((conversation) => conversation.id !== conversationToDelete.id));
       if (selectedConversationId === conversationToDelete.id) {
@@ -120,7 +121,7 @@ export function AiAnalystClient({
       }
       setPendingDeleteConversation(null);
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Could not delete analysis. Please try again.");
+      setError(deleteError instanceof Error ? deleteError.message : t("aiAnalyst.errors.deleteAnalysisFailed"));
     } finally {
       setIsDeleting(false);
     }
@@ -143,7 +144,7 @@ export function AiAnalystClient({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(typeof data.error === "string" ? data.error : "JobHolmes could not complete the analysis. Please try again.");
+        throw new Error(typeof data.error === "string" ? data.error : t("aiAnalyst.errors.chatFailed"));
       }
 
       setSelectedConversationId(data.conversation.id);
@@ -155,7 +156,7 @@ export function AiAnalystClient({
       await refreshConversations(data.conversation.id);
     } catch (sendError) {
       setDraft(trimmed);
-      setError(sendError instanceof Error ? sendError.message : "JobHolmes could not complete the analysis. Please try again.");
+      setError(sendError instanceof Error ? sendError.message : t("aiAnalyst.errors.chatFailed"));
     } finally {
       setIsSending(false);
     }
@@ -165,11 +166,11 @@ export function AiAnalystClient({
     <div className="flex min-w-0 flex-col gap-6">
       <SnapshotCards snapshot={snapshot} />
 
-      <section className="grid min-w-0 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]" aria-label="AI analyses">
-        <ClientSectionCard title="Analyses" action={<ClientButton variant="secondary" onClick={createNewAnalysis} disabled={isSending}>New analysis</ClientButton>}>
+      <section className="grid min-w-0 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]" aria-label={t("aiAnalyst.analysesSectionAriaLabel")}>
+        <ClientSectionCard title={t("aiAnalyst.analyses.title")} action={<ClientButton variant="secondary" onClick={createNewAnalysis} disabled={isSending}>{t("aiAnalyst.analyses.newAnalysisButton")}</ClientButton>}>
           <div className="p-3">
             {conversations.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">No saved analyses yet. Ask a question to start.</p>
+              <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">{t("aiAnalyst.analyses.empty")}</p>
             ) : (
               <div className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-2 xl:overflow-visible xl:pb-0">
                 {conversations.map((conversation) => (
@@ -183,7 +184,7 @@ export function AiAnalystClient({
                       <span className="mt-1 block text-xs text-slate-500">{formatTimestamp(conversation.updatedAt)}</span>
                     </button>
                     <button
-                      aria-label={`Delete "${conversation.title}"`}
+                      aria-label={t("aiAnalyst.deleteAnalysisAriaLabel").replace("{title}", conversation.title)}
                       className="absolute right-2 top-2 rounded-md p-1.5 text-slate-400 outline-none transition hover:bg-red-50 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-500"
                       onClick={(event) => {
                         event.stopPropagation();
@@ -200,13 +201,13 @@ export function AiAnalystClient({
           </div>
         </ClientSectionCard>
 
-        <ClientSectionCard className="min-w-0" title="Conversation">
+        <ClientSectionCard className="min-w-0" title={t("aiAnalyst.conversation.title")}>
           <div className="flex min-h-[560px] min-w-0 flex-col">
             <div className="min-w-0 flex-1 space-y-5 overflow-y-auto px-4 py-5 sm:px-5">
-              {isLoadingMessages ? <p className="text-sm text-slate-500">Loading analysis...</p> : null}
+              {isLoadingMessages ? <p className="text-sm text-slate-500">{t("aiAnalyst.conversation.loading")}</p> : null}
               {!isLoadingMessages && messages.length === 0 ? <EmptyConversation onPick={sendMessage} disabled={isSending} /> : null}
               {messages.map((message) => <ChatMessage key={message.id} message={message} />)}
-              {isSending ? <p className="text-sm font-medium text-slate-500">Analyzing your job search...</p> : null}
+              {isSending ? <p className="text-sm font-medium text-slate-500">{t("aiAnalyst.conversation.analyzing")}</p> : null}
             </div>
 
             <form
@@ -217,7 +218,7 @@ export function AiAnalystClient({
               }}
             >
               {error ? <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
-              <label className="sr-only" htmlFor="ai-message">Ask JobHolmes</label>
+              <label className="sr-only" htmlFor="ai-message">{t("aiAnalyst.inputLabel")}</label>
               <textarea
                 className="min-h-28 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                 disabled={isSending}
@@ -229,11 +230,11 @@ export function AiAnalystClient({
                     sendMessage();
                   }
                 }}
-                placeholder="Ask JobHolmes about your job search..."
+                placeholder={t("aiAnalyst.inputPlaceholder")}
                 value={draft}
               />
               <div className="mt-3 flex justify-end">
-                <ClientButton disabled={isSending || draft.trim().length === 0} type="submit">Send</ClientButton>
+                <ClientButton disabled={isSending || draft.trim().length === 0} type="submit">{t("aiAnalyst.sendButton")}</ClientButton>
               </div>
             </form>
           </div>
@@ -243,9 +244,9 @@ export function AiAnalystClient({
       {pendingDeleteConversation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
           <div aria-labelledby="delete-analysis-title" aria-modal="true" className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl" role="dialog">
-            <h2 className="text-base font-semibold text-slate-950" id="delete-analysis-title">Delete analysis?</h2>
+            <h2 className="text-base font-semibold text-slate-950" id="delete-analysis-title">{t("aiAnalyst.deleteDialog.title")}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              This will permanently delete &ldquo;<span className="font-medium text-slate-800">{pendingDeleteConversation.title}</span>&rdquo; and all its messages. This cannot be undone.
+              {t("aiAnalyst.deleteDialog.descriptionPrefix")}<span className="font-medium text-slate-800">{pendingDeleteConversation.title}</span>{t("aiAnalyst.deleteDialog.descriptionSuffix")}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
@@ -254,7 +255,7 @@ export function AiAnalystClient({
                 onClick={() => setPendingDeleteConversation(null)}
                 type="button"
               >
-                Cancel
+                {t("common.actions.cancel")}
               </button>
               <button
                 className="inline-flex min-h-10 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white outline-none transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
@@ -262,7 +263,7 @@ export function AiAnalystClient({
                 onClick={confirmDeleteConversation}
                 type="button"
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting ? t("common.actions.deleting") : t("common.actions.delete")}
               </button>
             </div>
           </div>
@@ -295,16 +296,16 @@ function ClientButton({ children, variant = "primary", ...props }: ButtonHTMLAtt
 
 function SnapshotCards({ snapshot }: { snapshot: AiFunnelSnapshot }) {
   const cards = [
-    { label: "Applications", value: snapshot.applications.toString() },
-    { label: "Screening rate", value: `${snapshot.screeningRate}%` },
-    { label: "Technical rate", value: `${snapshot.technicalRate}%` },
-    { label: "Offers", value: snapshot.offers.toString() },
-    { label: "Strong AI matches", value: snapshot.strongMatches.toString() },
-    { label: "Rejected", value: snapshot.rejected.toString() },
+    { label: t("aiAnalyst.snapshot.applications"), value: snapshot.applications.toString() },
+    { label: t("aiAnalyst.snapshot.screeningRate"), value: `${snapshot.screeningRate}%` },
+    { label: t("aiAnalyst.snapshot.technicalRate"), value: `${snapshot.technicalRate}%` },
+    { label: t("metrics.offers"), value: snapshot.offers.toString() },
+    { label: t("metrics.strongAiMatches"), value: snapshot.strongMatches.toString() },
+    { label: t("metrics.rejected"), value: snapshot.rejected.toString() },
   ];
 
   return (
-    <section className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" aria-label="AI funnel snapshot">
+    <section className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" aria-label={t("aiAnalyst.snapshot.ariaLabel")}>
       {cards.map((card) => (
         <article key={card.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <p className="text-sm font-medium text-slate-500">{card.label}</p>
@@ -318,7 +319,7 @@ function SnapshotCards({ snapshot }: { snapshot: AiFunnelSnapshot }) {
 function EmptyConversation({ onPick, disabled }: { onPick: (message: string) => void; disabled: boolean }) {
   return (
     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/60 px-4 py-6">
-      <p className="text-sm leading-6 text-slate-600">Ask JobHolmes about your applications, funnel conversion, rejection patterns or role targeting.</p>
+      <p className="text-sm leading-6 text-slate-600">{t("aiAnalyst.emptyConversation.intro")}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {suggestedQuestions.map((question) => (
           <button key={question} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60" disabled={disabled} onClick={() => onPick(question)} type="button">
@@ -335,7 +336,7 @@ function ChatMessage({ message }: { message: AiAnalystMessage }) {
 
   return (
     <article className={isUser ? "ml-auto max-w-2xl rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3" : "max-w-3xl border-l-2 border-slate-200 pl-4"}>
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{isUser ? "You" : "JobHolmes"}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{isUser ? t("aiAnalyst.chatMessage.userLabel") : t("aiAnalyst.chatMessage.assistantLabel")}</p>
       <div className="mt-2 space-y-3 text-sm leading-6 text-slate-800">
         {message.content.split(/\n{2,}/).map((paragraph, index) => (
           <p key={`${message.id}-${index}`} className="whitespace-pre-wrap break-words">{paragraph}</p>

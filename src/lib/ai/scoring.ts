@@ -1,5 +1,6 @@
 import type { JobRequirement } from "@/lib/ai/jd-requirements";
 import type { RequirementAssessment } from "@/lib/ai/requirement-evidence";
+import { t } from "@/lib/i18n/translate";
 
 export const AI_MATCH_SCORING_POLICY = "v1: requirement priority weights must_have=3, unknown=2, nice_to_have=1; coverage values covered=1, partial=0.5, not_covered=0, unknown=0; score=weighted covered value / total weight rounded to nearest percent.";
 export const AI_MATCH_CONFIDENCE_POLICY = "v1: reliability starts at 100 and subtracts penalties for incomplete JD, insufficient CV text, few/no requirements, low grounded evidence, unverifiable requirements, and unknown material requirements; deprecated manual-match values are ignored.";
@@ -68,10 +69,10 @@ export function determineProvisionalResult({ jdText, cvText, requirements, asses
   const completeness = assessInputCompleteness(jdText, cvText);
   const provisionalReasons: string[] = [];
 
-  if (!completeness.jdComplete) provisionalReasons.push("The job description appears incomplete, so some requirements may be missing.");
-  if (!completeness.cvComplete) provisionalReasons.push("The selected CV has limited readable content, so evidence may be incomplete.");
-  if (requirements.length === 0) provisionalReasons.push("No reliable requirements could be extracted from the job description.");
-  if (assessments.some((assessment) => assessment.status === "unknown" && requirements[assessment.requirementIndex]?.priority !== "nice_to_have")) provisionalReasons.push("One or more material requirements could not be verified from the selected CV.");
+  if (!completeness.jdComplete) provisionalReasons.push(t("jobFitAnalysis.reasons.jdIncomplete"));
+  if (!completeness.cvComplete) provisionalReasons.push(t("jobFitAnalysis.reasons.cvIncomplete"));
+  if (requirements.length === 0) provisionalReasons.push(t("jobFitAnalysis.reasons.noRequirementsExtracted"));
+  if (assessments.some((assessment) => assessment.status === "unknown" && requirements[assessment.requirementIndex]?.priority !== "nice_to_have")) provisionalReasons.push(t("jobFitAnalysis.reasons.unverifiedMaterialRequirement"));
 
   return { provisional: provisionalReasons.length > 0, provisionalReasons };
 }

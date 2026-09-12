@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, formStyles } from "@/components/form-ui";
+import { t } from "@/lib/i18n/translate";
 
 const SAVE_DEBOUNCE_MS = 500;
 const COPY_FEEDBACK_MS = 2000;
@@ -41,11 +42,11 @@ export function CoverLetterSection({
     try {
       const response = await fetch(`/api/applications/${applicationId}/cover-letter`, { method: "POST" });
       const data = await response.json();
-      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "JobHolmes could not generate the cover letter. Please try again.");
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : t("applications.coverLetter.errors.generateFailed"));
 
       setCoverLetter(data.coverLetter ?? "");
     } catch (error) {
-      setGenerateError(error instanceof Error ? error.message : "JobHolmes could not generate the cover letter. Please try again.");
+      setGenerateError(error instanceof Error ? error.message : t("applications.coverLetter.errors.generateFailed"));
     } finally {
       setIsGenerating(false);
     }
@@ -69,10 +70,10 @@ export function CoverLetterSection({
       });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        throw new Error(typeof data?.error === "string" ? data.error : "Could not save your changes. Please try again.");
+        throw new Error(typeof data?.error === "string" ? data.error : t("applications.coverLetter.errors.saveFailed"));
       }
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : "Could not save your changes. Please try again.");
+      setSaveError(error instanceof Error ? error.message : t("applications.coverLetter.errors.saveFailed"));
     }
   }
 
@@ -83,7 +84,7 @@ export function CoverLetterSection({
       if (copyFeedbackRef.current) clearTimeout(copyFeedbackRef.current);
       copyFeedbackRef.current = setTimeout(() => setIsCopied(false), COPY_FEEDBACK_MS);
     } catch {
-      setSaveError("Could not copy to clipboard.");
+      setSaveError(t("applications.coverLetter.errors.copyFailed"));
     }
   }
 
@@ -106,7 +107,7 @@ export function CoverLetterSection({
       {!hasCoverLetter ? (
         <div className="space-y-2">
           <Button disabled={!eligibility.eligible || isGenerating} onClick={generate} type="button">
-            {isGenerating ? "Generating..." : "Generate cover letter"}
+            {isGenerating ? t("applications.coverLetter.generatingButton") : t("applications.coverLetter.generateButton")}
           </Button>
           {!eligibility.eligible ? <p className="text-sm text-slate-500">{eligibility.reason}</p> : null}
         </div>
@@ -120,13 +121,13 @@ export function CoverLetterSection({
           />
           <div className="flex flex-wrap items-center gap-2">
             <Button disabled={isGenerating} onClick={generate} type="button" variant="secondary">
-              {isGenerating ? "Regenerating..." : "Regenerate"}
+              {isGenerating ? t("applications.coverLetter.regeneratingButton") : t("applications.coverLetter.regenerateButton")}
             </Button>
             <Button onClick={copyToClipboard} type="button" variant="secondary">
-              {isCopied ? "Copied!" : "Copy"}
+              {isCopied ? t("applications.coverLetter.copiedButton") : t("applications.coverLetter.copyButton")}
             </Button>
             <Button onClick={downloadAsTxt} type="button" variant="secondary">
-              Download .txt
+              {t("applications.coverLetter.downloadButton")}
             </Button>
           </div>
         </div>

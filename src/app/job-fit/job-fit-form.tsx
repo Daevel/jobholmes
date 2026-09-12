@@ -7,6 +7,7 @@ import { Button, formStyles } from "@/components/form-ui";
 import { JobFitAnalysis } from "@/components/job-fit-analysis";
 import { SourceField } from "@/components/source-field";
 import { parseRequirementsAndGaps, type RequirementsAndGapsPayload } from "@/lib/ai/requirements-and-gaps";
+import { t } from "@/lib/i18n/translate";
 
 type CvOption = { id: string; name: string };
 type MatchClass = "A_STRONG" | "B_STRETCH" | "C_LONG_SHOT";
@@ -59,10 +60,10 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
         body: JSON.stringify({ jdText, cvDocumentId }),
       });
       const data = (await response.json()) as PreviewResponse;
-      if (!response.ok) throw new Error(data.error ?? "JobHolmes could not analyze this job fit. Please try again.");
+      if (!response.ok) throw new Error(data.error ?? t("jobFit.form.errors.previewFailed"));
 
       const parsed = parseRequirementsAndGaps(data.requirementsAndGapsJson);
-      if (parsed.kind !== "structured") throw new Error("JobHolmes could not analyze this job fit. Please try again.");
+      if (parsed.kind !== "structured") throw new Error(t("jobFit.form.errors.previewFailed"));
 
       setPreview({
         jdText,
@@ -77,7 +78,7 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
       });
     } catch (error) {
       setPreview(null);
-      setPreviewError(error instanceof Error ? error.message : "JobHolmes could not analyze this job fit. Please try again.");
+      setPreviewError(error instanceof Error ? error.message : t("jobFit.form.errors.previewFailed"));
     } finally {
       setPreviewPending(false);
     }
@@ -109,11 +110,11 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not create application. Please try again.");
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : t("applications.new.errors.createFailed"));
 
       router.push(`/applications/${data.application.id}`);
     } catch (error) {
-      setConfirmError(error instanceof Error ? error.message : "Could not create application. Please try again.");
+      setConfirmError(error instanceof Error ? error.message : t("applications.new.errors.createFailed"));
     } finally {
       setConfirmPending(false);
     }
@@ -122,42 +123,42 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
   return (
     <div className="space-y-5">
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>Job description</h2>
-        <p className={formStyles.sectionDescription}>Paste the job description and select the CV to compare it against. JobHolmes uses the same matching engine as AI Match on existing applications.</p>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.sections.jobDescription.title")}</h2>
+        <p className={formStyles.sectionDescription}>{t("jobFit.form.jobDescriptionSection.description")}</p>
         <div className="mt-5 space-y-4">
           <label className={formStyles.label}>
-            Job description
-            <textarea className={formStyles.textarea} onChange={(event) => setJdText(event.target.value)} placeholder="Paste the full job description here..." value={jdText} />
+            {t("applications.form.jobDescription.label")}
+            <textarea className={formStyles.textarea} onChange={(event) => setJdText(event.target.value)} placeholder={t("applications.form.jobDescription.placeholder")} value={jdText} />
           </label>
           <label className={formStyles.label}>
-            CV to compare
+            {t("jobFit.form.cvToCompareLabel")}
             <select className={formStyles.input} onChange={(event) => setCvDocumentId(event.target.value)} value={cvDocumentId}>
-              <option value="">Select a CV</option>
+              <option value="">{t("jobFit.form.selectCvOption")}</option>
               {cvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
             </select>
-            {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">No CVs uploaded yet. <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">Upload a CV</a> to use Job Fit.</span> : null}
+            {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.noCvsUploadedPrefix")} <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">{t("applications.form.cv.uploadCvLinkText")}</a> {t("jobFit.form.noCvsUploadedSuffix")}</span> : null}
           </label>
           {previewError ? <p className={formStyles.formError}>{previewError}</p> : null}
           <Button disabled={previewPending || !jdText.trim() || !cvDocumentId} onClick={analyzeFit} type="button">
-            {previewPending ? "Analyzing..." : "Analyze fit"}
+            {previewPending ? t("applications.detail.aiMatch.analyzingButton") : t("jobFit.form.analyzeButton")}
           </Button>
         </div>
       </section>
 
       {preview ? (
         <section className={formStyles.section}>
-          <h2 className={formStyles.sectionTitle}>Result</h2>
+          <h2 className={formStyles.sectionTitle}>{t("jobFit.form.resultSection.title")}</h2>
           {isStale ? (
-            <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">The job description or selected CV changed since this result was calculated. Analyze fit again before creating an application.</p>
+            <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t("jobFit.form.staleWarning")}</p>
           ) : (
             <div className="mt-5 space-y-5">
               <dl className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">AI match class</dt>
+                  <dt className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">{t("applications.detail.aiMatch.class")}</dt>
                   <dd className="mt-2"><AiMatchBadge percentage={preview.score} value={preview.matchClass} /></dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Confidence</dt>
+                  <dt className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">{t("applications.detail.aiMatch.confidence")}</dt>
                   <dd className="mt-2 text-sm text-slate-800">{preview.confidence === null ? "-" : `${preview.confidence}%`}</dd>
                 </div>
               </dl>
@@ -170,31 +171,31 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
       {preview && !isStale ? (
         <form className="space-y-5" onSubmit={createApplication}>
           <section className={formStyles.section}>
-            <h2 className={formStyles.sectionTitle}>Create application from result</h2>
-            <p className={formStyles.sectionDescription}>Fill in the remaining application details. The Job Fit result above is saved with the new application without running the analysis again.</p>
+            <h2 className={formStyles.sectionTitle}>{t("jobFit.form.createSection.title")}</h2>
+            <p className={formStyles.sectionDescription}>{t("jobFit.form.createSection.description")}</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <TextField label="Company" name="company" placeholder="Acme GmbH" required />
-              <TextField label="Role" name="role" placeholder="Senior Frontend Engineer" required />
-              <TextField defaultValue={today} label="Applied date" name="appliedAt" required type="date" />
+              <TextField label={t("applications.form.company.label")} name="company" placeholder={t("applications.form.company.placeholder")} required />
+              <TextField label={t("applications.form.role.label")} name="role" placeholder={t("applications.form.role.placeholder")} required />
+              <TextField defaultValue={today} label={t("applications.form.appliedDate.label")} name="appliedAt" required type="date" />
               <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
-              {!remoteOnly ? <TextField label="Country" name="country" placeholder="Germany" required /> : null}
-              {!remoteOnly ? <TextField label="City" name="city" placeholder="Berlin" /> : null}
-              <TextField label="Work mode" name="workMode" placeholder="Remote" />
+              {!remoteOnly ? <TextField label={t("applications.form.country.label")} name="country" placeholder={t("applications.form.country.placeholder")} required /> : null}
+              {!remoteOnly ? <TextField label={t("applications.form.city.label")} name="city" placeholder={t("applications.form.city.placeholder")} /> : null}
+              <TextField label={t("applications.form.workMode.label")} name="workMode" placeholder={t("applications.form.workMode.placeholder")} />
               <SourceField sources={sources} />
-              <TextField label="Vacancy URL" name="vacancyUrl" placeholder="https://example.com/jobs/123" type="url" />
-              <TextField label="Role category" name="roleCategory" placeholder="Frontend" />
-              <TextField label="Seniority" name="seniority" placeholder="Senior" />
-              <TextField label="Work authorization" name="workAuthorization" placeholder="EU citizen" />
+              <TextField label={t("applications.form.vacancyUrl.label")} name="vacancyUrl" placeholder={t("applications.form.vacancyUrl.placeholder")} type="url" />
+              <TextField label={t("applications.form.roleCategory.label")} name="roleCategory" placeholder={t("applications.form.roleCategory.placeholder")} />
+              <TextField label={t("applications.form.seniority.label")} name="seniority" placeholder={t("applications.form.seniority.placeholder")} />
+              <TextField label={t("applications.form.workAuthorization.label")} name="workAuthorization" placeholder={t("applications.form.workAuthorization.placeholder")} />
               <SponsorshipField />
-              <TextField label="Salary min" name="salaryMin" placeholder="70000" type="number" />
-              <TextField label="Salary max" name="salaryMax" placeholder="90000" type="number" />
-              <TextField label="Currency" name="currency" placeholder="EUR" />
+              <TextField label={t("applications.form.salaryMin.label")} name="salaryMin" placeholder={t("applications.form.salaryMin.placeholder")} type="number" />
+              <TextField label={t("applications.form.salaryMax.label")} name="salaryMax" placeholder={t("applications.form.salaryMax.placeholder")} type="number" />
+              <TextField label={t("applications.form.currency.label")} name="currency" placeholder={t("applications.form.currency.placeholder")} />
             </div>
             <div className="mt-4">
-              <TextareaField label="Stage context" name="stageContext" placeholder="Submission details, recruiter feedback, or next steps..." />
+              <TextareaField label={t("applications.form.stageContext.label")} name="stageContext" placeholder={t("applications.form.stageContext.placeholder")} />
             </div>
             <div className="mt-4">
-              <TextareaField label="Notes" name="notes" placeholder="Context, recruiter notes, next steps..." />
+              <TextareaField label={t("applications.sections.notes.title")} name="notes" placeholder={t("applications.form.notes.placeholder")} />
             </div>
           </section>
 
@@ -202,7 +203,7 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
 
           <div className="flex justify-end">
             <Button disabled={confirmPending} type="submit">
-              {confirmPending ? "Creating..." : "Create application from result"}
+              {confirmPending ? t("jobFit.form.creatingButton") : t("jobFit.form.createButton")}
             </Button>
           </div>
         </form>
@@ -221,7 +222,7 @@ function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (c
         onChange={(event) => onChange(event.target.checked)}
         type="checkbox"
       />
-      Remote only
+      {t("applications.form.remoteOnly.label")}
     </label>
   );
 }
@@ -229,11 +230,11 @@ function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (c
 function SponsorshipField() {
   return (
     <label className={formStyles.label}>
-      Sponsorship required
+      {t("applications.form.sponsorship.label")}
       <select className={formStyles.input} defaultValue="unknown" name="sponsorshipRequired">
-        <option value="unknown">Unknown</option>
-        <option value="false">No</option>
-        <option value="true">Yes</option>
+        <option value="unknown">{t("applications.form.sponsorship.options.unknown")}</option>
+        <option value="false">{t("applications.form.sponsorship.options.no")}</option>
+        <option value="true">{t("applications.form.sponsorship.options.yes")}</option>
       </select>
     </label>
   );

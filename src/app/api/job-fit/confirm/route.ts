@@ -6,8 +6,9 @@ import { verifyJobFitSignature } from "@/lib/ai/job-fit-signature";
 import { parseRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { requireCurrentUser } from "@/lib/current-user";
 import { syncApplicationToGoogleSheet } from "@/lib/google/sheets";
+import { t } from "@/lib/i18n/translate";
 
-const INVALID_JOB_FIT_MESSAGE = "The job fit result is no longer valid or has expired. Please re-run the analysis before creating the application.";
+const INVALID_JOB_FIT_MESSAGE = t("jobFit.form.errors.resultExpired");
 
 const matchClasses = ["A_STRONG", "B_STRETCH", "C_LONG_SHOT"] as const;
 
@@ -26,7 +27,7 @@ const confirmSchema = baseApplicationFields
   .omit({ jdText: true, cvDocumentId: true })
   .extend({ jobFit: jobFitSchema })
   .refine((input) => !input.salaryMin || !input.salaryMax || input.salaryMax >= input.salaryMin, {
-    message: "Salary max must not be lower than salary min",
+    message: t("applications.validation.salaryMaxBelowMin"),
     path: ["salaryMax"],
   })
   .superRefine(validateApplicationLocationFields)
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     const user = await requireCurrentUser();
     userId = user.id;
   } catch {
-    return Response.json({ error: "You must be signed in to create an application." }, { status: 401 });
+    return Response.json({ error: t("errors.auth.signInToCreateApplication") }, { status: 401 });
   }
 
   const rawBody = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   const saveSource = Boolean(saveSourceRaw);
 
   const parsed = confirmSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: "Invalid request.", fieldErrors: parsed.error.flatten().fieldErrors }, { status: 400 });
+  if (!parsed.success) return Response.json({ error: t("errors.invalidRequest"), fieldErrors: parsed.error.flatten().fieldErrors }, { status: 400 });
 
   const { jobFit, ...applicationFields } = parsed.data;
 
@@ -91,6 +92,6 @@ export async function POST(request: Request) {
 
     return Response.json({ application }, { status: 201 });
   } catch (error) {
-    return Response.json({ error: error instanceof Error && error.message === "CV_NOT_FOUND" ? "Select an uploaded CV before creating the application." : "Could not create application. Please try again." }, { status: 400 });
+    return Response.json({ error: error instanceof Error && error.message === "CV_NOT_FOUND" ? t("jobFit.form.errors.selectCvBeforeCreating") : t("applications.new.errors.createFailed") }, { status: 400 });
   }
 }

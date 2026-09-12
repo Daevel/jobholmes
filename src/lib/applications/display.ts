@@ -53,7 +53,7 @@ export function formatSalary(application: Pick<Application, "salaryMin" | "salar
 }
 
 export function formatApplicationLocation(application: Pick<Application, "remoteOnly" | "city" | "country">) {
-  if (application.remoteOnly) return "Remote only";
+  if (application.remoteOnly) return t("applications.form.remoteOnly.label");
   if (application.city && application.country) return `${application.city}, ${application.country}`;
   return application.country;
 }

@@ -2,6 +2,7 @@ import { AppShell, PageHeader } from "@/components/application-ui";
 import { getAiFunnelSnapshot } from "@/lib/ai/context";
 import { getConversationMessagesForUser, listConversationsForUser } from "@/lib/ai/conversations";
 import { requireCurrentUser } from "@/lib/current-user";
+import { t } from "@/lib/i18n/translate";
 import { AiAnalystClient, type AiAnalystConversation, type AiAnalystMessage } from "./ui";
 
 export default async function AiPage() {
@@ -12,7 +13,7 @@ export default async function AiPage() {
 
   return (
     <AppShell accountLabel={user.name || user.email} contentSize="wide" currentPath="/ai">
-      <PageHeader subtitle="Ask questions about your job-search funnel and application patterns." title="AI Analyst" />
+      <PageHeader subtitle={t("aiAnalyst.pageSubtitle")} title={t("aiAnalyst.pageTitle")} />
       <AiAnalystClient
         initialConversations={conversations.map(serializeConversation)}
         initialMessages={(messages ?? []).map(serializeMessage)}

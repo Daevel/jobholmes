@@ -1,6 +1,7 @@
 import { getOpenAIClient } from "@/lib/ai/client";
 import type { RequirementsAndGapsPayload } from "@/lib/ai/requirements-and-gaps";
 import { coverLetterInstructions } from "@/lib/ai/instructions";
+import { t } from "@/lib/i18n/translate";
 
 export type CoveredRequirement = { text: string; evidence: string[] };
 
@@ -33,10 +34,10 @@ export function checkCoverLetterEligibility({
   hasStructuredMatch: boolean;
   coveredRequirementCount: number;
 }): CoverLetterEligibility {
-  if (!jdText?.trim()) return { eligible: false, reason: "Add a job description before generating a cover letter." };
-  if (!cvDocumentId) return { eligible: false, reason: "Select an uploaded CV before generating a cover letter." };
-  if (!hasStructuredMatch) return { eligible: false, reason: "Run AI Match on this application before generating a cover letter." };
-  if (coveredRequirementCount === 0) return { eligible: false, reason: "AI Match found no covered requirements yet, so JobHolmes can't generate a grounded cover letter." };
+  if (!jdText?.trim()) return { eligible: false, reason: t("applications.coverLetter.eligibility.missingJd") };
+  if (!cvDocumentId) return { eligible: false, reason: t("applications.coverLetter.eligibility.missingCv") };
+  if (!hasStructuredMatch) return { eligible: false, reason: t("applications.coverLetter.eligibility.missingAiMatch") };
+  if (coveredRequirementCount === 0) return { eligible: false, reason: t("applications.coverLetter.eligibility.noCoveredRequirements") };
   return { eligible: true };
 }
 

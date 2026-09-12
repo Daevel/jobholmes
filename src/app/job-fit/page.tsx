@@ -3,6 +3,7 @@ import { AppShell, PageHeader } from "@/components/application-ui";
 import { listSourcesForUser } from "@/lib/applications/sources-service";
 import { listCvsForUser } from "@/lib/cvs/service";
 import { requireCurrentUser } from "@/lib/current-user";
+import { t } from "@/lib/i18n/translate";
 
 export default async function JobFitPage() {
   const user = await requireCurrentUser();
@@ -11,7 +12,7 @@ export default async function JobFitPage() {
 
   return (
     <AppShell accountLabel={user.name || user.email} currentPath="/job-fit">
-      <PageHeader eyebrow="Job Fit" subtitle="Paste a job description and compare it against one of your CVs before creating an application, using the same matching engine as AI Match." title="Preview a job fit" />
+      <PageHeader eyebrow={t("jobFit.pageEyebrow")} subtitle={t("jobFit.pageSubtitle")} title={t("jobFit.pageTitle")} />
       <JobFitForm cvs={cvs.map((cv) => ({ id: cv.id, name: cv.name }))} sources={sources} today={today} />
     </AppShell>
   );

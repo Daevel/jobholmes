@@ -3,6 +3,7 @@ import { buildJobSearchContext } from "@/lib/ai/context";
 import { appendAssistantMessage, appendUserMessage, createConversationForUser, getConversationForUser } from "@/lib/ai/conversations";
 import { jobHolmesAiInstructions } from "@/lib/ai/instructions";
 import { requireCurrentUser } from "@/lib/current-user";
+import { t } from "@/lib/i18n/translate";
 import { z } from "zod";
 
 const schema = z.object({
@@ -20,22 +21,22 @@ export async function POST(request: Request) {
 
     const parsed = schema.safeParse(await request.json());
     if (!parsed.success) {
-      return Response.json({ error: "Enter a message before sending." }, { status: 400 });
+      return Response.json({ error: t("aiAnalyst.errors.messageRequired") }, { status: 400 });
     }
 
     const { message } = parsed.data;
     const conversation = parsed.data.conversationId
       ? await getConversationForUser(user.id, parsed.data.conversationId)
-      : await createConversationForUser(user.id, "Job search analysis");
+      : await createConversationForUser(user.id, t("aiAnalyst.defaultConversationTitle"));
 
     if (!conversation) {
-      return Response.json({ error: "Analysis not found." }, { status: 404 });
+      return Response.json({ error: t("errors.analysisNotFound") }, { status: 404 });
     }
 
     conversationId = conversation.id;
     const userMessage = await appendUserMessage(user.id, conversation.id, message);
     if (!userMessage) {
-      return Response.json({ error: "Analysis not found." }, { status: 404 });
+      return Response.json({ error: t("errors.analysisNotFound") }, { status: 404 });
     }
 
     const context = await buildJobSearchContext(user.id);
@@ -56,7 +57,7 @@ ${message}`,
       ],
     });
 
-    const assistantText = response.output_text || "JobHolmes could not complete the analysis. Please try again.";
+    const assistantText = response.output_text || t("aiAnalyst.errors.chatFailed");
     const assistantMessage = await appendAssistantMessage({
       userId: user.id,
       conversationId: conversation.id,
@@ -79,10 +80,10 @@ ${message}`,
     });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return Response.json({ error: "You must be signed in to use AI Analyst." }, { status: 401 });
+      return Response.json({ error: t("errors.auth.signInToUseAiAnalyst") }, { status: 401 });
     }
 
     console.error("AI chat request failed", { error, userId, conversationId });
-    return Response.json({ error: "JobHolmes could not complete the analysis. Please try again." }, { status: 500 });
+    return Response.json({ error: t("aiAnalyst.errors.chatFailed") }, { status: 500 });
   }
 }
