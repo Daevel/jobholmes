@@ -6,7 +6,7 @@ import { AI_MATCH_UNANALYZED } from "@/lib/applications/ai-match";
 import { matchLabels, stageLabels } from "@/lib/applications/display";
 import { t } from "@/lib/i18n/translate";
 
-const SEARCH_DEBOUNCE_MS = 350;
+const SEARCH_DEBOUNCE_MS = 130;
 
 export function ApplicationsFilters({ children }: { children: React.ReactNode }) {
   const router = useRouter();

@@ -139,9 +139,11 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
             {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.noCvsUploadedPrefix")} <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">{t("applications.form.cv.uploadCvLinkText")}</a> {t("jobFit.form.noCvsUploadedSuffix")}</span> : null}
           </label>
           {previewError ? <p className={formStyles.formError}>{previewError}</p> : null}
-          <Button disabled={previewPending || !jdText.trim() || !cvDocumentId} onClick={analyzeFit} type="button">
-            {previewPending ? t("applications.detail.aiMatch.analyzingButton") : t("jobFit.form.analyzeButton")}
-          </Button>
+          <div className="mt-5">
+            <Button disabled={previewPending || !jdText.trim() || !cvDocumentId} onClick={analyzeFit} type="button">
+              {previewPending ? t("applications.detail.aiMatch.analyzingButton") : t("jobFit.form.analyzeButton")}
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -180,7 +182,7 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
               <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
               {!remoteOnly ? <TextField label={t("applications.form.country.label")} name="country" placeholder={t("applications.form.country.placeholder")} required /> : null}
               {!remoteOnly ? <TextField label={t("applications.form.city.label")} name="city" placeholder={t("applications.form.city.placeholder")} /> : null}
-              <TextField label={t("applications.form.workMode.label")} name="workMode" placeholder={t("applications.form.workMode.placeholder")} />
+              {!remoteOnly ? <TextField label={t("applications.form.workMode.label")} name="workMode" placeholder={t("applications.form.workMode.placeholder")} /> : null}
               <SourceField sources={sources} />
               <TextField label={t("applications.form.vacancyUrl.label")} name="vacancyUrl" placeholder={t("applications.form.vacancyUrl.placeholder")} type="url" />
               <TextField label={t("applications.form.roleCategory.label")} name="roleCategory" placeholder={t("applications.form.roleCategory.placeholder")} />

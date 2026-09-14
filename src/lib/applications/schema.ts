@@ -67,11 +67,12 @@ export function validateApplicationLocationFields(data: { country?: string; city
   }
 }
 
-// Remote-only applications have no specific location: silently clear country/city rather than
-// treating a client that still sent them alongside remoteOnly=true as a validation error - the UI
-// is expected to hide those fields itself, so this is a server-side safety net, not the normal path.
-export function clearLocationWhenRemoteOnly<T extends { country?: string; city?: string; remoteOnly: boolean }>(input: T) {
-  return input.remoteOnly ? { ...input, country: undefined, city: undefined } : input;
+// Remote-only applications have no specific location or work mode: silently clear country/city/
+// workMode rather than treating a client that still sent them alongside remoteOnly=true as a
+// validation error - the UI is expected to hide those fields itself, so this is a server-side
+// safety net, not the normal path. Shared by create, update, and the Job Fit confirm schema.
+export function clearLocationWhenRemoteOnly<T extends { country?: string; city?: string; workMode?: string; remoteOnly: boolean }>(input: T) {
+  return input.remoteOnly ? { ...input, country: undefined, city: undefined, workMode: undefined } : input;
 }
 
 export const createApplicationSchema = baseApplicationFields

@@ -29,7 +29,7 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
           <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
           {!remoteOnly ? <Field state={state} label={t("applications.form.country.label")} name="country" required placeholder={t("applications.form.country.placeholder")} /> : null}
           {!remoteOnly ? <Field state={state} label={t("applications.form.city.label")} name="city" placeholder={t("applications.form.city.placeholder")} /> : null}
-          <Field state={state} label={t("applications.form.workMode.label")} name="workMode" placeholder={t("applications.form.workMode.placeholder")} />
+          {!remoteOnly ? <Field state={state} label={t("applications.form.workMode.label")} name="workMode" placeholder={t("applications.form.workMode.placeholder")} /> : null}
           <SourceField defaultValue={state.values?.source} ref={sourceFieldRef} sources={sources} />
           <Field state={state} label={t("applications.form.vacancyUrl.label")} name="vacancyUrl" placeholder={t("applications.form.vacancyUrl.placeholder")} type="url" />
           <Field state={state} label={t("applications.form.roleCategory.label")} name="roleCategory" placeholder={t("applications.form.roleCategory.placeholder")} />
@@ -47,6 +47,7 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
             onRemoteOnlySuggestion={() => {
               if (!remoteOnly) setRemoteOnly(true);
             }}
+            remoteOnly={remoteOnly}
             sourceFieldRef={sourceFieldRef}
           />
         </div>
@@ -135,7 +136,7 @@ function RemoteOnlyField({ checked, onChange }: { checked: boolean; onChange: (c
   );
 }
 
-function EnrichmentButton({ sourceFieldRef, onRemoteOnlySuggestion }: { sourceFieldRef: React.RefObject<SourceFieldHandle | null>; onRemoteOnlySuggestion: () => void }) {
+function EnrichmentButton({ sourceFieldRef, onRemoteOnlySuggestion, remoteOnly }: { sourceFieldRef: React.RefObject<SourceFieldHandle | null>; onRemoteOnlySuggestion: () => void; remoteOnly: boolean }) {
   async function extractDetails() {
     const form = document.getElementById("application-form");
     if (!(form instanceof HTMLFormElement)) return;
@@ -148,6 +149,7 @@ function EnrichmentButton({ sourceFieldRef, onRemoteOnlySuggestion }: { sourceFi
     });
     if (!response.ok) return;
     const data = await response.json() as { suggestions: Record<string, string | number | boolean | null> };
+    const becomesRemoteOnly = remoteOnly || data.suggestions.remoteOnly === true;
     for (const [name, value] of Object.entries(data.suggestions)) {
       if (value === null || value === undefined || value === "") continue;
       if (name === "source") {
@@ -158,6 +160,9 @@ function EnrichmentButton({ sourceFieldRef, onRemoteOnlySuggestion }: { sourceFi
         if (value === true) onRemoteOnlySuggestion();
         continue;
       }
+      // Remote-only applications have no work mode - a suggestion for it is stale/inconsistent
+      // with the same-response (or already-set) remoteOnly, so it's dropped rather than applied.
+      if (name === "workMode" && becomesRemoteOnly) continue;
       const field = form.elements.namedItem(name);
       if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
         if (field.value.trim() === "") field.value = String(value);

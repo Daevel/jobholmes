@@ -49,6 +49,24 @@ test("create: country and city set but remoteOnly true clears both in the valida
   }
 });
 
+test("create: workMode set alongside remoteOnly true is cleared in the validated output", () => {
+  const result = createApplicationSchema.safeParse({ ...baseCreateInput, remoteOnly: "on", workMode: "Hybrid" });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.workMode, undefined);
+  }
+});
+
+test("create: workMode set with remoteOnly false is preserved", () => {
+  const result = createApplicationSchema.safeParse({ ...baseCreateInput, country: "Germany", workMode: "Hybrid" });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.workMode, "Hybrid");
+  }
+});
+
 test("update: shares the same country/remoteOnly rule as create", () => {
   const missingCountry = updateApplicationSchema.safeParse(baseUpdateInput);
   assert.equal(missingCountry.success, false);
@@ -59,10 +77,11 @@ test("update: shares the same country/remoteOnly rule as create", () => {
   const remoteOnlyOk = updateApplicationSchema.safeParse({ ...baseUpdateInput, remoteOnly: "on" });
   assert.equal(remoteOnlyOk.success, true);
 
-  const remoteOnlyClearsLocation = updateApplicationSchema.safeParse({ ...baseUpdateInput, country: "France", city: "Paris", remoteOnly: "on" });
+  const remoteOnlyClearsLocation = updateApplicationSchema.safeParse({ ...baseUpdateInput, country: "France", city: "Paris", remoteOnly: "on", workMode: "Hybrid" });
   assert.equal(remoteOnlyClearsLocation.success, true);
   if (remoteOnlyClearsLocation.success) {
     assert.equal(remoteOnlyClearsLocation.data.country, undefined);
     assert.equal(remoteOnlyClearsLocation.data.city, undefined);
+    assert.equal(remoteOnlyClearsLocation.data.workMode, undefined);
   }
 });

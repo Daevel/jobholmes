@@ -81,7 +81,7 @@ function ApplicationsTable({
               <SortableHeader className="w-[13%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="stage" label={t("applications.table.headers.stage")} preservedParams={preservedParams} />
               <SortableHeader className="w-[11%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="outcome" label={t("applications.table.headers.outcome")} preservedParams={preservedParams} />
               <SortableHeader className="w-[13%] px-3 py-3" currentDirection={sortDirection} currentField={sortField} field="aiMatch" label={t("applications.table.headers.aiMatch")} preservedParams={preservedParams} />
-              <th className="w-[6%] px-3 py-3">{t("applications.table.headers.actions")}</th>
+              <th className="w-[12%] px-3 py-3">{t("applications.table.headers.actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
