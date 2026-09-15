@@ -155,6 +155,13 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
         </div>
       </section>
 
+      <section className={formStyles.section}>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.coverLetter.label")}</h2>
+        <div className="mt-5">
+          <TextareaField label={t("applications.form.coverLetter.label")} name="coverLetter" state={state} values={values} />
+        </div>
+      </section>
+
       <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
         <ButtonLink href={`/applications/${applicationId}`} variant="secondary">{t("common.actions.cancel")}</ButtonLink>
         <Button disabled={pending} type="submit">{pending ? t("common.actions.saving") : t("applications.edit.submitButton")}</Button>

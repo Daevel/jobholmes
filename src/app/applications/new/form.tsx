@@ -79,6 +79,13 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
         </div>
       </section>
 
+      <section className={formStyles.section}>
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.coverLetter.label")}</h2>
+        <div className="mt-5">
+          <TextareaField label={t("applications.form.coverLetter.label")} name="coverLetter" placeholder={t("applications.form.coverLetter.placeholder")} state={state} />
+        </div>
+      </section>
+
       <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
         <ButtonLink href="/applications" variant="secondary">{t("common.actions.cancel")}</ButtonLink>
         <Button disabled={pending} type="submit">

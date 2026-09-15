@@ -112,6 +112,7 @@ type BaseApplicationValuesInput = {
   currency?: string;
   stageContext?: string;
   notes?: string;
+  coverLetter?: string;
 };
 
 function buildBaseApplicationValues(userId: string, input: BaseApplicationValuesInput) {
@@ -137,6 +138,7 @@ function buildBaseApplicationValues(userId: string, input: BaseApplicationValues
     stage: "APPLICATION" as const,
     stageContext: input.stageContext ?? null,
     notes: input.notes ?? null,
+    coverLetter: input.coverLetter ?? null,
   };
 }
 
@@ -239,6 +241,7 @@ export async function updateApplicationForUser(userId: string, applicationId: st
       rejectionReason,
       requirementsAndGaps,
       notes: input.notes ?? null,
+      coverLetter: input.coverLetter ?? null,
       jdVerifiedAt: shouldInvalidateAiMatch ? null : previous.jdVerifiedAt,
       updatedAt: new Date(),
     })

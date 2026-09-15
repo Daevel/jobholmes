@@ -9,20 +9,13 @@ import { requireCurrentUser } from "@/lib/current-user";
 import { t } from "@/lib/i18n/translate";
 import { ApplicationsFilters } from "@/app/applications/applications-filters";
 
-const filterOptions = [
-  { label: t("applications.filters.all"), href: "/applications", value: null },
-  { label: t("applications.filters.inProgress"), href: "/applications?outcome=IN_PROGRESS", value: "IN_PROGRESS" },
-  { label: t("applications.filters.rejected"), href: "/applications?outcome=REJECTED", value: "REJECTED" },
-  { label: t("applications.filters.offer"), href: "/applications?outcome=OFFER", value: "OFFER" },
-] as const;
-
 export default async function ApplicationsPage({ searchParams }: { searchParams?: Promise<{ outcome?: string; q?: string; stage?: string; match?: string; sort?: string; dir?: string }> }) {
   const user = await requireCurrentUser();
   const params = await searchParams;
   const sortField: SortField = isSortField(params?.sort) ? params.sort : "appliedAt";
   const sortDirection: SortDirection = isSortDirection(params?.dir) ? params.dir : "desc";
   const applications = await listApplicationsForUser(user.id, { field: sortField, direction: sortDirection });
-  const selectedOutcome = filterOptions.find((option) => option.value === params?.outcome)?.value ?? null;
+  const selectedOutcome = params?.outcome && params.outcome in outcomeLabels ? params.outcome : "";
   const selectedStage = params?.stage && params.stage in stageLabels ? params.stage : "";
   const selectedMatch: AiMatchFilter = params?.match === AI_MATCH_UNANALYZED || (params?.match && params.match in matchLabels) ? params.match as AiMatchFilter : "";
   const query = params?.q?.trim().toLowerCase() ?? "";
@@ -38,14 +31,6 @@ export default async function ApplicationsPage({ searchParams }: { searchParams?
   return (
     <AppShell accountLabel={user.name || user.email} contentSize="wide" currentPath="/applications">
       <PageHeader action={<ButtonLink href="/applications/new">{t("applications.list.addApplicationCta")}</ButtonLink>} subtitle={t("applications.list.pageSubtitle")} title={t("applications.list.pageTitle")} />
-
-      <section className="flex flex-wrap gap-2" aria-label={t("applications.filters.statusFiltersAriaLabel")}>
-        {filterOptions.map((option) => (
-          <Link key={option.label} className={`rounded-lg border px-3 py-2 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-500 ${selectedOutcome === option.value ? "border-indigo-200 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950"}`} href={option.href}>
-            {option.label}
-          </Link>
-        ))}
-      </section>
 
       <ApplicationsFilters>
         {visibleApplications.length === 0 ? (

@@ -52,16 +52,14 @@ export const en = {
       notAnalyzed: "Not analyzed",
     },
     filters: {
-      all: "All",
-      inProgress: "In progress",
-      rejected: "Rejected",
-      offer: "Offer",
-      statusFiltersAriaLabel: "Application status filters",
       searchLabel: "Search company or role",
       searchPlaceholder: "Company or role",
       stageLabel: "Stage",
       stageAriaLabel: "Filter by stage",
       anyStage: "Any stage",
+      outcomeLabel: "Outcome",
+      outcomeAriaLabel: "Filter by outcome",
+      anyOutcome: "Any outcome",
       matchLabel: "AI Match",
       matchAriaLabel: "Filter by AI match",
       anyMatch: "Any AI match",
@@ -144,6 +142,7 @@ export const en = {
       stageContext: { label: "Stage context", placeholder: "Submission details, recruiter feedback, or next steps..." },
       rejectionReason: { label: "Rejection reason" },
       notes: { placeholder: "Context, recruiter notes, next steps..." },
+      coverLetter: { label: "Cover letter", placeholder: "Write or paste your cover letter here..." },
       outcome: { label: "Outcome" },
       stage: { label: "Stage" },
       responseDate: { label: "Response date" },
@@ -221,7 +220,7 @@ export const en = {
         jobDescription: { title: "Job description" },
         coverLetter: {
           title: "Cover letter",
-          description: "Generated only from the requirements AI Match confirmed are covered by your selected CV.",
+          description: "Write or paste your cover letter for this application. To generate one from an AI Match, do it from Job Fit Preview before creating the application.",
         },
       },
       overview: {
@@ -274,25 +273,19 @@ export const en = {
     // The interactive cover-letter widget's own copy (src/app/applications/[id]/cover-letter-section.tsx).
     // Its SectionCard title/description live under detail.sections.coverLetter above.
     coverLetter: {
-      generateButton: "Generate cover letter",
-      generatingButton: "Generating...",
-      regenerateButton: "Regenerate",
-      regeneratingButton: "Regenerating...",
       copyButton: "Copy",
       copiedButton: "Copied!",
       downloadButton: "Download .txt",
       errors: {
-        generateFailed: "JobHolmes could not generate the cover letter. Please try again.",
         saveFailed: "Could not save your changes. Please try again.",
         copyFailed: "Could not copy to clipboard.",
-        needsAiMatch: "This application needs a completed AI Match before generating a cover letter.",
-        needsCoveredRequirement: "This application needs a completed AI Match with at least one covered requirement before generating a cover letter.",
         invalidCoverLetterText: "Invalid cover letter text.",
         // PATCH /api/applications/[id]/cover-letter's own error, distinct from saveFailed above.
         saveApiFailed: "Could not save cover letter. Please try again.",
       },
-      // checkCoverLetterEligibility() reasons (src/lib/ai/cover-letter.ts) — shown directly as
-      // eligibility.reason by both the detail page's disabled-button hint and the API route.
+      // checkCoverLetterEligibility() reasons (src/lib/ai/cover-letter.ts) — the function itself is
+      // unused by the app today (generation moved to Job Fit Preview) but is kept, tests and all,
+      // per the 4sexies task scope; these strings back its still-live t() calls.
       eligibility: {
         missingJd: "Add a job description before generating a cover letter.",
         missingCv: "Select an uploaded CV before generating a cover letter.",
@@ -439,6 +432,13 @@ export const en = {
       },
       createButton: "Create application from result",
       creatingButton: "Creating...",
+      coverLetter: {
+        label: "Cover letter",
+        generateButton: "Generate cover letter",
+        generatingButton: "Generating...",
+        regenerateButton: "Regenerate",
+        regeneratingButton: "Regenerating...",
+      },
       errors: {
         previewFailed: "JobHolmes could not analyze this job fit. Please try again.",
         jdRequired: "Paste a job description before analyzing fit.",
@@ -446,6 +446,8 @@ export const en = {
         selectCvBeforeJobFit: "Select an uploaded CV before running Job Fit.",
         resultExpired: "The job fit result is no longer valid or has expired. Please re-run the analysis before creating the application.",
         selectCvBeforeCreating: "Select an uploaded CV before creating the application.",
+        coverLetterFailed: "JobHolmes could not generate the cover letter. Please try again.",
+        noCoveredRequirements: "AI Match found no covered requirements yet, so JobHolmes can't generate a grounded cover letter.",
       },
     },
   },

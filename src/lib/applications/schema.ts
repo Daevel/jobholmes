@@ -49,6 +49,7 @@ export const baseApplicationFields = z
     currency: optionalTrimmedString(10),
     stageContext: optionalText,
     notes: optionalText,
+    coverLetter: optionalTrimmedString(10000),
   })
   .strict();
 

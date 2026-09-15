@@ -12,17 +12,13 @@ export function CoverLetterSection({
   company,
   role,
   initialCoverLetter,
-  eligibility,
 }: {
   applicationId: string;
   company: string;
   role: string;
   initialCoverLetter: string | null;
-  eligibility: { eligible: true } | { eligible: false; reason: string };
 }) {
   const [coverLetter, setCoverLetter] = useState(initialCoverLetter ?? "");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generateError, setGenerateError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -33,24 +29,6 @@ export function CoverLetterSection({
     if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
     if (copyFeedbackRef.current) clearTimeout(copyFeedbackRef.current);
   }, []);
-
-  async function generate() {
-    if (isGenerating) return;
-    setIsGenerating(true);
-    setGenerateError(null);
-
-    try {
-      const response = await fetch(`/api/applications/${applicationId}/cover-letter`, { method: "POST" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : t("applications.coverLetter.errors.generateFailed"));
-
-      setCoverLetter(data.coverLetter ?? "");
-    } catch (error) {
-      setGenerateError(error instanceof Error ? error.message : t("applications.coverLetter.errors.generateFailed"));
-    } finally {
-      setIsGenerating(false);
-    }
-  }
 
   function handleChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     const value = event.target.value;
@@ -104,36 +82,24 @@ export function CoverLetterSection({
 
   return (
     <div className="space-y-4">
-      {!hasCoverLetter ? (
-        <div className="space-y-2">
-          <Button disabled={!eligibility.eligible || isGenerating} onClick={generate} type="button">
-            {isGenerating ? t("applications.coverLetter.generatingButton") : t("applications.coverLetter.generateButton")}
+      <textarea
+        className={formStyles.textarea}
+        onChange={handleChange}
+        placeholder={t("applications.form.coverLetter.placeholder")}
+        rows={14}
+        value={coverLetter}
+      />
+      {hasCoverLetter ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={copyToClipboard} type="button" variant="secondary">
+            {isCopied ? t("applications.coverLetter.copiedButton") : t("applications.coverLetter.copyButton")}
           </Button>
-          {!eligibility.eligible ? <p className="text-sm text-slate-500">{eligibility.reason}</p> : null}
+          <Button onClick={downloadAsTxt} type="button" variant="secondary">
+            {t("applications.coverLetter.downloadButton")}
+          </Button>
         </div>
-      ) : (
-        <div className="space-y-3">
-          <textarea
-            className={formStyles.textarea}
-            onChange={handleChange}
-            rows={14}
-            value={coverLetter}
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <Button disabled={isGenerating} onClick={generate} type="button" variant="secondary">
-              {isGenerating ? t("applications.coverLetter.regeneratingButton") : t("applications.coverLetter.regenerateButton")}
-            </Button>
-            <Button onClick={copyToClipboard} type="button" variant="secondary">
-              {isCopied ? t("applications.coverLetter.copiedButton") : t("applications.coverLetter.copyButton")}
-            </Button>
-            <Button onClick={downloadAsTxt} type="button" variant="secondary">
-              {t("applications.coverLetter.downloadButton")}
-            </Button>
-          </div>
-        </div>
-      )}
+      ) : null}
 
-      {generateError ? <p className={formStyles.formError}>{generateError}</p> : null}
       {saveError ? <p className={formStyles.formError}>{saveError}</p> : null}
     </div>
   );

@@ -37,11 +37,16 @@ type PreviewResult = {
 
 export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOption[]; sources: string[] }) {
   const router = useRouter();
+  const [company, setCompany] = useState("");
+  const [role, setRole] = useState("");
   const [jdText, setJdText] = useState("");
   const [cvDocumentId, setCvDocumentId] = useState("");
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [previewPending, setPreviewPending] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [coverLetter, setCoverLetter] = useState<string | null>(null);
+  const [coverLetterPending, setCoverLetterPending] = useState(false);
+  const [coverLetterError, setCoverLetterError] = useState<string | null>(null);
   const [confirmPending, setConfirmPending] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [remoteOnly, setRemoteOnly] = useState(false);
@@ -52,6 +57,8 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
     if (previewPending || !jdText.trim() || !cvDocumentId) return;
     setPreviewPending(true);
     setPreviewError(null);
+    setCoverLetter(null);
+    setCoverLetterError(null);
 
     try {
       const response = await fetch("/api/job-fit/preview", {
@@ -84,6 +91,34 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
     }
   }
 
+  async function generateCoverLetter() {
+    if (!preview || coverLetterPending) return;
+    setCoverLetterPending(true);
+    setCoverLetterError(null);
+
+    try {
+      const response = await fetch("/api/job-fit/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jdText: preview.jdText,
+          cvDocumentId: preview.cvDocumentId,
+          company,
+          role,
+          requirementsAndGapsJson: preview.requirementsAndGapsJson,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : t("jobFit.form.errors.coverLetterFailed"));
+
+      setCoverLetter(data.coverLetter ?? "");
+    } catch (error) {
+      setCoverLetterError(error instanceof Error ? error.message : t("jobFit.form.errors.coverLetterFailed"));
+    } finally {
+      setCoverLetterPending(false);
+    }
+  }
+
   async function createApplication(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!preview || isStale || confirmPending) return;
@@ -97,6 +132,9 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...baseFields,
+          company,
+          role,
+          coverLetter: coverLetter || undefined,
           jobFit: {
             jdText: preview.jdText,
             cvDocumentId: preview.cvDocumentId,
@@ -126,6 +164,10 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
         <h2 className={formStyles.sectionTitle}>{t("applications.form.sections.jobDescription.title")}</h2>
         <p className={formStyles.sectionDescription}>{t("jobFit.form.jobDescriptionSection.description")}</p>
         <div className="mt-5 space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <ControlledTextField label={t("applications.form.company.label")} onChange={setCompany} placeholder={t("applications.form.company.placeholder")} required value={company} />
+            <ControlledTextField label={t("applications.form.role.label")} onChange={setRole} placeholder={t("applications.form.role.placeholder")} required value={role} />
+          </div>
           <label className={formStyles.label}>
             {t("applications.form.jobDescription.label")}
             <textarea className={formStyles.textarea} onChange={(event) => setJdText(event.target.value)} placeholder={t("applications.form.jobDescription.placeholder")} value={jdText} />
@@ -165,6 +207,26 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
                 </div>
               </dl>
               <JobFitAnalysis payload={preview.payload} />
+              {preview.matchClass === "A_STRONG" ? (
+                <div className="space-y-3 border-t border-slate-200 pt-5">
+                  {coverLetter === null ? (
+                    <Button disabled={coverLetterPending || !company.trim() || !role.trim()} onClick={generateCoverLetter} type="button" variant="secondary">
+                      {coverLetterPending ? t("jobFit.form.coverLetter.generatingButton") : t("jobFit.form.coverLetter.generateButton")}
+                    </Button>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className={formStyles.label}>
+                        {t("jobFit.form.coverLetter.label")}
+                        <textarea className={formStyles.textarea} onChange={(event) => setCoverLetter(event.target.value)} rows={14} value={coverLetter} />
+                      </label>
+                      <Button disabled={coverLetterPending} onClick={generateCoverLetter} type="button" variant="secondary">
+                        {coverLetterPending ? t("jobFit.form.coverLetter.regeneratingButton") : t("jobFit.form.coverLetter.regenerateButton")}
+                      </Button>
+                    </div>
+                  )}
+                  {coverLetterError ? <p className={formStyles.formError}>{coverLetterError}</p> : null}
+                </div>
+              ) : null}
             </div>
           )}
         </section>
@@ -175,9 +237,17 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
           <section className={formStyles.section}>
             <h2 className={formStyles.sectionTitle}>{t("jobFit.form.createSection.title")}</h2>
             <p className={formStyles.sectionDescription}>{t("jobFit.form.createSection.description")}</p>
+            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">{t("applications.form.company.label")}</dt>
+                <dd className="mt-1 text-sm font-medium text-slate-800">{company}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">{t("applications.form.role.label")}</dt>
+                <dd className="mt-1 text-sm font-medium text-slate-800">{role}</dd>
+              </div>
+            </dl>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <TextField label={t("applications.form.company.label")} name="company" placeholder={t("applications.form.company.placeholder")} required />
-              <TextField label={t("applications.form.role.label")} name="role" placeholder={t("applications.form.role.placeholder")} required />
               <TextField defaultValue={today} label={t("applications.form.appliedDate.label")} name="appliedAt" required type="date" />
               <RemoteOnlyField checked={remoteOnly} onChange={setRemoteOnly} />
               {!remoteOnly ? <TextField label={t("applications.form.country.label")} name="country" placeholder={t("applications.form.country.placeholder")} required /> : null}
@@ -238,6 +308,15 @@ function SponsorshipField() {
         <option value="false">{t("applications.form.sponsorship.options.no")}</option>
         <option value="true">{t("applications.form.sponsorship.options.yes")}</option>
       </select>
+    </label>
+  );
+}
+
+function ControlledTextField({ label, value, onChange, placeholder, required }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; required?: boolean }) {
+  return (
+    <label className={formStyles.label}>
+      {label}{required ? <span className="text-red-600"> *</span> : null}
+      <input className={formStyles.input} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
     </label>
   );
 }

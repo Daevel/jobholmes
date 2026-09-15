@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { AI_MATCH_UNANALYZED } from "@/lib/applications/ai-match";
-import { matchLabels, stageLabels } from "@/lib/applications/display";
+import { matchLabels, outcomeLabels, stageLabels } from "@/lib/applications/display";
 import { t } from "@/lib/i18n/translate";
 
 const SEARCH_DEBOUNCE_MS = 130;
@@ -16,6 +16,8 @@ export function ApplicationsFilters({ children }: { children: React.ReactNode })
 
   const rawStage = searchParams.get("stage") ?? "";
   const selectedStage = rawStage in stageLabels ? rawStage : "";
+  const rawOutcome = searchParams.get("outcome") ?? "";
+  const selectedOutcome = rawOutcome in outcomeLabels ? rawOutcome : "";
   const rawMatch = searchParams.get("match") ?? "";
   const selectedMatch = rawMatch === AI_MATCH_UNANALYZED || rawMatch in matchLabels ? rawMatch : "";
 
@@ -51,7 +53,7 @@ export function ApplicationsFilters({ children }: { children: React.ReactNode })
 
   return (
     <>
-      <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:grid-cols-[1fr_180px_180px]">
+      <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:grid-cols-[1fr_180px_180px_180px]">
         <label className="text-sm font-medium text-slate-700">
           {t("applications.filters.searchLabel")}
           <input
@@ -73,6 +75,18 @@ export function ApplicationsFilters({ children }: { children: React.ReactNode })
           >
             <option value="">{t("applications.filters.anyStage")}</option>
             {Object.entries(stageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        <label className="text-sm font-medium text-slate-700">
+          {t("applications.filters.outcomeLabel")}
+          <select
+            aria-label={t("applications.filters.outcomeAriaLabel")}
+            className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100"
+            onChange={(event) => updateSearchParams({ outcome: event.target.value || null })}
+            value={selectedOutcome}
+          >
+            <option value="">{t("applications.filters.anyOutcome")}</option>
+            {Object.entries(outcomeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
         <label className="text-sm font-medium text-slate-700">

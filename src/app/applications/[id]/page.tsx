@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AiMatchBadge, AppShell, ButtonLink, DetailField, OutcomeBadge, SectionCard, StageBadge } from "@/components/application-ui";
 import { JobFitAnalysis } from "@/components/job-fit-analysis";
-import { checkCoverLetterEligibility, selectCoveredRequirements } from "@/lib/ai/cover-letter";
 import { parseRequirementsAndGaps, type ParsedRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { formatApplicationLocation, formatDate, formatSalary, getDaysToResponse } from "@/lib/applications/display";
 import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
@@ -22,13 +21,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const daysToResponse = getDaysToResponse(application);
   const requirementsAndGaps = parseRequirementsAndGaps(application.requirementsAndGaps);
   const legacyRequirementsAndGaps = requirementsAndGaps.kind === "legacy" ? requirementsAndGaps.text : null;
-  const coveredRequirementCount = requirementsAndGaps.kind === "structured" ? selectCoveredRequirements(requirementsAndGaps.payload).length : 0;
-  const coverLetterEligibility = checkCoverLetterEligibility({
-    jdText: application.jdText,
-    cvDocumentId: application.cvDocumentId,
-    hasStructuredMatch: requirementsAndGaps.kind === "structured",
-    coveredRequirementCount,
-  });
 
   return (
     <AppShell accountLabel={user.name || user.email} currentPath="/applications">
@@ -116,7 +108,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </SectionCard>
 
         <SectionCard className="p-5 xl:col-span-2" description={t("applications.detail.sections.coverLetter.description")} title={t("applications.detail.sections.coverLetter.title")}>
-          <CoverLetterSection applicationId={application.id} company={application.company} eligibility={coverLetterEligibility} initialCoverLetter={application.coverLetter} role={application.role} />
+          <CoverLetterSection applicationId={application.id} company={application.company} initialCoverLetter={application.coverLetter} role={application.role} />
         </SectionCard>
 
         <SectionCard className="p-5 xl:col-span-2" title={t("applications.sections.notes.title")}>
