@@ -23,9 +23,19 @@ export function ApplicationsFilters({ children }: { children: React.ReactNode })
 
   const [searchValue, setSearchValue] = useState(searchParams.get("q") ?? "");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks the last q value THIS component actually sent via updateSearchParams, so the effect
+  // below can tell "the URL changed because our own debounced search request landed" (expected,
+  // must not clobber whatever the user has typed since) apart from "the URL changed from outside"
+  // (a direct link, browser back/forward) — only the latter should resync searchValue. Starts
+  // aligned to the initial searchParams value so the very first render isn't misread as external.
+  const lastSentQueryRef = useRef(searchParams.get("q") ?? "");
 
   useEffect(() => {
-    setSearchValue(searchParams.get("q") ?? "");
+    const urlQuery = searchParams.get("q") ?? "";
+    if (urlQuery !== lastSentQueryRef.current) {
+      setSearchValue(urlQuery);
+      lastSentQueryRef.current = urlQuery;
+    }
   }, [searchParams]);
 
   useEffect(() => () => {
@@ -48,7 +58,11 @@ export function ApplicationsFilters({ children }: { children: React.ReactNode })
     const value = event.target.value;
     setSearchValue(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => updateSearchParams({ q: value.trim() || null }), SEARCH_DEBOUNCE_MS);
+    debounceRef.current = setTimeout(() => {
+      const trimmed = value.trim();
+      lastSentQueryRef.current = trimmed;
+      updateSearchParams({ q: trimmed || null });
+    }, SEARCH_DEBOUNCE_MS);
   }
 
   return (
