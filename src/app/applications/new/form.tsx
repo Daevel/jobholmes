@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createApplicationAction } from "@/app/applications/new/actions";
 import { initialCreateApplicationFormState, type CreateApplicationFormState } from "@/app/applications/new/form-state";
+import { CoverLetterFileUpload } from "@/components/cover-letter-file-upload";
 import { CvUploadInline } from "@/components/cv-upload-inline";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
@@ -21,6 +22,19 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
     const parsed = parseStageHistoryFormValue(state.values?.stageHistory);
     return parsed.APPLICATION ?? { text: "", updatedAt: today };
   });
+
+  // coverLetter is an uncontrolled field (see TextareaField below), so it's read/written the same
+  // way EnrichmentButton populates other fields from outside React - via the form element itself.
+  function handleCoverLetterExtracted(text: string) {
+    const form = document.getElementById("application-form");
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const field = form.elements.namedItem("coverLetter");
+    if (!(field instanceof HTMLTextAreaElement)) return;
+    if (field.value.trim() && !window.confirm(t("documents.textExtraction.confirmOverwrite"))) return;
+
+    field.value = text;
+  }
 
   return (
     <form action={formAction} className="space-y-5" id="application-form">
@@ -108,6 +122,7 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
         <h2 className={formStyles.sectionTitle}>{t("applications.form.coverLetter.label")}</h2>
         <div className="mt-5">
           <TextareaField label={t("applications.form.coverLetter.label")} name="coverLetter" placeholder={t("applications.form.coverLetter.placeholder")} state={state} />
+          <CoverLetterFileUpload onExtracted={handleCoverLetterExtracted} />
         </div>
       </section>
 

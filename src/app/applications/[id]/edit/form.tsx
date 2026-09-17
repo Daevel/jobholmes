@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateApplicationAction } from "@/app/applications/[id]/edit/actions";
 import { initialUpdateApplicationFormState, type UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
+import { CoverLetterFileUpload } from "@/components/cover-letter-file-upload";
 import { CvUploadInline } from "@/components/cv-upload-inline";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
@@ -37,6 +38,19 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
   const [cvPromptError, setCvPromptError] = useState<string | null>(null);
 
   const today = formatDateInput(new Date());
+
+  // coverLetter is an uncontrolled field (see TextareaField below), so it's read/written the same
+  // way EnrichmentButton populates other fields from outside React - via the form element itself.
+  function handleCoverLetterExtracted(text: string) {
+    const form = document.getElementById("application-form");
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const field = form.elements.namedItem("coverLetter");
+    if (!(field instanceof HTMLTextAreaElement)) return;
+    if (field.value.trim() && !window.confirm(t("documents.textExtraction.confirmOverwrite"))) return;
+
+    field.value = text;
+  }
 
   function updateStageEntryText(stageKey: ApplicationStage, text: string) {
     setStageHistory((prev) => ({ ...prev, [stageKey]: { text, updatedAt: prev[stageKey]?.updatedAt ?? today } }));
@@ -192,6 +206,7 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
         <h2 className={formStyles.sectionTitle}>{t("applications.form.coverLetter.label")}</h2>
         <div className="mt-5">
           <TextareaField label={t("applications.form.coverLetter.label")} name="coverLetter" state={state} values={values} />
+          <CoverLetterFileUpload onExtracted={handleCoverLetterExtracted} />
         </div>
       </section>
 

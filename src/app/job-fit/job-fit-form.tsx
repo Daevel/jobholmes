@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AiMatchBadge } from "@/components/application-ui";
+import { CoverLetterFileUpload } from "@/components/cover-letter-file-upload";
 import { Button, formStyles } from "@/components/form-ui";
 import { JobFitAnalysis } from "@/components/job-fit-analysis";
 import { SourceField } from "@/components/source-field";
@@ -119,6 +120,12 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
     }
   }
 
+  function handleCoverLetterExtracted(text: string) {
+    if (coverLetter && coverLetter.trim() && !window.confirm(t("documents.textExtraction.confirmOverwrite"))) return;
+    setCoverLetter(text);
+    setCoverLetterError(null);
+  }
+
   async function createApplication(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!preview || isStale || confirmPending) return;
@@ -210,9 +217,12 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
               {preview.matchClass === "A_STRONG" ? (
                 <div className="space-y-3 border-t border-slate-200 pt-5">
                   {coverLetter === null ? (
-                    <Button disabled={coverLetterPending || !company.trim() || !role.trim()} onClick={generateCoverLetter} type="button" variant="secondary">
-                      {coverLetterPending ? t("jobFit.form.coverLetter.generatingButton") : t("jobFit.form.coverLetter.generateButton")}
-                    </Button>
+                    <div>
+                      <Button disabled={coverLetterPending || !company.trim() || !role.trim()} onClick={generateCoverLetter} type="button" variant="secondary">
+                        {coverLetterPending ? t("jobFit.form.coverLetter.generatingButton") : t("jobFit.form.coverLetter.generateButton")}
+                      </Button>
+                      <CoverLetterFileUpload onExtracted={handleCoverLetterExtracted} />
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       <label className={formStyles.label}>
@@ -222,6 +232,7 @@ export function JobFitForm({ today, cvs, sources }: { today: string; cvs: CvOpti
                       <Button disabled={coverLetterPending} onClick={generateCoverLetter} type="button" variant="secondary">
                         {coverLetterPending ? t("jobFit.form.coverLetter.regeneratingButton") : t("jobFit.form.coverLetter.regenerateButton")}
                       </Button>
+                      <CoverLetterFileUpload onExtracted={handleCoverLetterExtracted} />
                     </div>
                   )}
                   {coverLetterError ? <p className={formStyles.formError}>{coverLetterError}</p> : null}

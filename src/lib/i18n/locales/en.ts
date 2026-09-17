@@ -341,6 +341,7 @@ export const en = {
       signInToDeleteCvs: "You must be signed in to delete CVs.",
       signInToDownloadCvs: "You must be signed in to download CVs.",
       signInToUploadCvs: "You must be signed in to upload a CV.",
+      signInToExtractDocumentText: "You must be signed in to extract text from a file.",
     },
   },
   dashboard: {
@@ -417,6 +418,27 @@ export const en = {
         invalidPdf: "Upload a valid PDF file.",
         fileTooLarge: "PDF files must be 5 MB or smaller.",
         noReadableText: "We could not extract readable text from this PDF. Please upload a text-based PDF.",
+      },
+    },
+  },
+  // Shared by every place that can populate a text field from an uploaded file (currently the
+  // cover letter field in applications.new/edit form.tsx and job-fit-form.tsx) - not specific to
+  // any one of them, hence its own top-level domain rather than living under applications/jobFit.
+  documents: {
+    textExtraction: {
+      uploadButton: "Upload a file instead",
+      fileLabel: "File",
+      extractButton: "Extract text",
+      extractingButton: "Extracting...",
+      // {count} is not used here; this is a plain confirm() prompt, shown only when the target
+      // field already has non-empty text - see cvUploadInline's sibling components for the same
+      // "confirm before destructive overwrite" judgment call applied elsewhere in the project.
+      confirmOverwrite: "This will replace the current text. Continue?",
+      errors: {
+        fileRequired: "Choose a file to upload.",
+        unsupportedFormat: "Unsupported file format. Upload a .txt, .pdf, or .docx file.",
+        emptyOrTooShort: "We could not extract readable text from this file.",
+        extractFailed: "Could not extract text from this file. Please try again.",
       },
     },
   },
