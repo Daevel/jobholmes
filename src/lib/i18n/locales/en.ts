@@ -123,6 +123,9 @@ export const en = {
         uploadCvLinkText: "Upload a CV",
         uploadCvSuffix: "to enable AI Match.",
         legacyValuePrefix: "Legacy CV value:",
+        uploadInline: {
+          openButton: "+ Upload a new CV",
+        },
       },
       jobDescription: { label: "Job description", placeholder: "Paste the full job description here..." },
       enrichment: {
@@ -337,6 +340,7 @@ export const en = {
       signInToSaveCoverLetter: "You must be signed in to save a cover letter.",
       signInToDeleteCvs: "You must be signed in to delete CVs.",
       signInToDownloadCvs: "You must be signed in to download CVs.",
+      signInToUploadCvs: "You must be signed in to upload a CV.",
     },
   },
   dashboard: {

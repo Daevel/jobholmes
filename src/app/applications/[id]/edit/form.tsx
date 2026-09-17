@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateApplicationAction } from "@/app/applications/[id]/edit/actions";
 import { initialUpdateApplicationFormState, type UpdateApplicationFormState } from "@/app/applications/[id]/edit/form-state";
+import { CvUploadInline } from "@/components/cv-upload-inline";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
 import { determineCvRejectionPromptOptions } from "@/lib/applications/cv-rejection-prompt";
@@ -285,16 +286,34 @@ function CvRejectionDialog({
 
 function CvSelect({ cvs, state, values }: { cvs: CvOption[]; state: UpdateApplicationFormState; values: EditDefaults }) {
   const error = getError(state, "cvDocumentId");
+  const [availableCvs, setAvailableCvs] = useState(cvs);
+  const [pendingSelectionId, setPendingSelectionId] = useState<string | null>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
+
+  // The new <option> only exists in the DOM after the availableCvs update above has rendered, so
+  // the select's value can't be set imperatively until then - this effect runs right after that
+  // render, same "uncontrolled select set via ref" approach as SourceField.applySuggestion.
+  useEffect(() => {
+    if (!pendingSelectionId || !selectRef.current) return;
+    selectRef.current.value = pendingSelectionId;
+    setPendingSelectionId(null);
+  }, [pendingSelectionId]);
+
+  function handleUploaded(cv: CvOption) {
+    setAvailableCvs((prev) => [cv, ...prev.filter((existing) => existing.id !== cv.id)]);
+    setPendingSelectionId(cv.id);
+  }
 
   return (
     <label className={formStyles.label}>
       {t("applications.form.cv.label")}
-      <select className={formStyles.input} defaultValue={values.cvDocumentId ?? ""} name="cvDocumentId">
+      <select className={formStyles.input} defaultValue={values.cvDocumentId ?? ""} name="cvDocumentId" ref={selectRef}>
         <option value="">{t("applications.form.cv.noneOption")}</option>
-        {cvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
+        {availableCvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
       </select>
+      <CvUploadInline onUploaded={handleUploaded} />
       {values.legacyCvVersion ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.legacyValuePrefix")} {values.legacyCvVersion}</span> : null}
-      {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.noCvsUploadedPrefix")} <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">{t("applications.form.cv.uploadCvLinkText")}</a> {t("applications.form.cv.uploadCvSuffix")}</span> : null}
+      {availableCvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.noCvsUploadedPrefix")} <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">{t("applications.form.cv.uploadCvLinkText")}</a> {t("applications.form.cv.uploadCvSuffix")}</span> : null}
       {error ? <span className={formStyles.error}>{error}</span> : null}
     </label>
   );

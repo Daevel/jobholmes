@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createApplicationAction } from "@/app/applications/new/actions";
 import { initialCreateApplicationFormState, type CreateApplicationFormState } from "@/app/applications/new/form-state";
+import { CvUploadInline } from "@/components/cv-upload-inline";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
 import { stageLabels } from "@/lib/applications/display";
@@ -122,15 +123,33 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
 
 function CvSelect({ cvs, state }: { cvs: CvOption[]; state: CreateApplicationFormState }) {
   const error = getError(state, "cvDocumentId");
+  const [availableCvs, setAvailableCvs] = useState(cvs);
+  const [pendingSelectionId, setPendingSelectionId] = useState<string | null>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
+
+  // The new <option> only exists in the DOM after the availableCvs update above has rendered, so
+  // the select's value can't be set imperatively until then - this effect runs right after that
+  // render, same "uncontrolled select set via ref" approach as SourceField.applySuggestion.
+  useEffect(() => {
+    if (!pendingSelectionId || !selectRef.current) return;
+    selectRef.current.value = pendingSelectionId;
+    setPendingSelectionId(null);
+  }, [pendingSelectionId]);
+
+  function handleUploaded(cv: CvOption) {
+    setAvailableCvs((prev) => [cv, ...prev.filter((existing) => existing.id !== cv.id)]);
+    setPendingSelectionId(cv.id);
+  }
 
   return (
     <label className={formStyles.label}>
       {t("applications.form.cv.label")}
-      <select className={formStyles.input} defaultValue={state.values?.cvDocumentId ?? ""} name="cvDocumentId">
+      <select className={formStyles.input} defaultValue={state.values?.cvDocumentId ?? ""} name="cvDocumentId" ref={selectRef}>
         <option value="">{t("applications.form.cv.noneOption")}</option>
-        {cvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
+        {availableCvs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name}</option>)}
       </select>
-      {cvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.noCvsUploadedPrefix")} <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">{t("applications.form.cv.uploadCvLinkText")}</a> {t("applications.form.cv.uploadCvSuffix")}</span> : null}
+      <CvUploadInline onUploaded={handleUploaded} />
+      {availableCvs.length === 0 ? <span className="mt-2 block text-xs text-slate-500">{t("applications.form.cv.noCvsUploadedPrefix")} <a className="font-semibold text-indigo-600 hover:text-indigo-700" href="/cvs">{t("applications.form.cv.uploadCvLinkText")}</a> {t("applications.form.cv.uploadCvSuffix")}</span> : null}
       {error ? <span className={formStyles.error}>{error}</span> : null}
     </label>
   );
