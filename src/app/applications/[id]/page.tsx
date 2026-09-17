@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { AiMatchBadge, AppShell, ButtonLink, DetailField, OutcomeBadge, SectionCard, StageBadge } from "@/components/application-ui";
 import { JobFitAnalysis } from "@/components/job-fit-analysis";
 import { parseRequirementsAndGaps, type ParsedRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
-import { formatApplicationLocation, formatDate, formatSalary, getDaysToResponse } from "@/lib/applications/display";
+import { formatApplicationLocation, formatDate, formatSalary, getDaysToResponse, stageLabels } from "@/lib/applications/display";
 import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
 import { getApplicationForUser } from "@/lib/applications/service";
+import { getEffectiveStageHistory, reachedStages } from "@/lib/applications/stage-history";
 import { requireCurrentUser } from "@/lib/current-user";
 import { t } from "@/lib/i18n/translate";
 import { AiMatchButton } from "./ai-match-button";
@@ -21,6 +22,8 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const daysToResponse = getDaysToResponse(application);
   const requirementsAndGaps = parseRequirementsAndGaps(application.requirementsAndGaps);
   const legacyRequirementsAndGaps = requirementsAndGaps.kind === "legacy" ? requirementsAndGaps.text : null;
+  const stageHistory = getEffectiveStageHistory(application);
+  const stagesWithHistory = reachedStages(application.stage).filter((stage) => stageHistory[stage]);
 
   return (
     <AppShell accountLabel={user.name || user.email} currentPath="/applications">
@@ -84,7 +87,16 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             <DetailField label={t("applications.detail.funnel.outcome")}><OutcomeBadge value={application.outcome} /></DetailField>
             <DetailField label={t("applications.detail.funnel.responseDate")} value={formatDate(application.responseAt)} />
             <DetailField label={t("applications.detail.funnel.daysToResponse")} value={daysToResponse === null ? "-" : String(daysToResponse)} />
-            <DetailField label={t("applications.detail.funnel.stageContext")} value={application.stageContext} wide wrap />
+            {stagesWithHistory.length === 0 ? (
+              <DetailField label={t("applications.form.stageHistory.title")} value={t("applications.detail.funnel.stageHistoryEmpty")} wide />
+            ) : (
+              stagesWithHistory.map((stage) => (
+                <DetailField key={stage} label={stageLabels[stage]} wide wrap>
+                  <span className="block text-xs font-medium text-slate-500">{formatDate(new Date(stageHistory[stage]!.updatedAt))}</span>
+                  <span className="mt-1 block">{stageHistory[stage]!.text}</span>
+                </DetailField>
+              ))
+            )}
             {shouldShowRejectionReason(application.outcome) ? <DetailField label={t("applications.detail.funnel.rejectionReason")} value={application.rejectionReason} wide wrap /> : null}
           </dl>
         </SectionCard>

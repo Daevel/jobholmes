@@ -1,4 +1,4 @@
-import { boolean, index, integer, numeric, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const matchClassEnum = pgEnum("match_class", ["A_STRONG","B_STRETCH","C_LONG_SHOT"]);
 export const applicationOutcomeEnum = pgEnum("application_outcome", ["PENDING","IN_PROGRESS","REJECTED","WITHDRAWN","OFFER"]);
@@ -74,7 +74,16 @@ export const applications = pgTable("applications", {
   outcome: applicationOutcomeEnum("outcome").default("PENDING").notNull(),
   stage: applicationStageEnum("stage").default("APPLICATION").notNull(),
   responseAt: timestamp("response_at", { withTimezone: true }),
+  // Legacy free-text field, superseded by stageHistory below. Kept for historical rows not yet
+  // resaved under the new model and for the one-time legacy import script — see
+  // src/lib/applications/stage-history.ts for the read-time fallback that treats it as the
+  // current stage's entry when stageHistory is empty.
   stageContext: text("stage_context"),
+  // Per-stage history: Partial<Record<ApplicationStage, { text, updatedAt }>> — one editable slot
+  // per funnel stage, not a multi-event log. Left untyped ($type<>()) since it arrives from
+  // Postgres as unrestricted JSON; every read site validates it with zod (see stage-history.ts)
+  // rather than trusting the column's runtime shape.
+  stageHistory: jsonb("stage_history"),
   rejectionReason: text("rejection_reason"),
   rejectionType: varchar("rejection_type", { length: 80 }),
   requirementsAndGaps: text("requirements_and_gaps"),

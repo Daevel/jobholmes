@@ -5,6 +5,8 @@ import { createApplicationAction } from "@/app/applications/new/actions";
 import { initialCreateApplicationFormState, type CreateApplicationFormState } from "@/app/applications/new/form-state";
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
+import { stageLabels } from "@/lib/applications/display";
+import { parseStageHistoryFormValue, serializeStageHistoryForForm } from "@/lib/applications/stage-history";
 import { t } from "@/lib/i18n/translate";
 
 type FieldName = NonNullable<CreateApplicationFormState["values"]> extends Partial<Record<infer Key, string>> ? Key : never;
@@ -14,6 +16,10 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
   const [state, formAction, pending] = useActionState(createApplicationAction, initialCreateApplicationFormState);
   const sourceFieldRef = useRef<SourceFieldHandle>(null);
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [applicationStageEntry, setApplicationStageEntry] = useState(() => {
+    const parsed = parseStageHistoryFormValue(state.values?.stageHistory);
+    return parsed.APPLICATION ?? { text: "", updatedAt: today };
+  });
 
   return (
     <form action={formAction} className="space-y-5" id="application-form">
@@ -65,11 +71,29 @@ export function NewApplicationForm({ today, cvs, sources }: { today: string; cvs
       </section>
 
       <section className={formStyles.section}>
-        <h2 className={formStyles.sectionTitle}>{t("applications.new.sections.applicationContext.title")}</h2>
-        <p className={formStyles.sectionDescription}>{t("applications.new.sections.applicationContext.description")}</p>
-        <div className="mt-5">
-          <TextareaField label={t("applications.form.stageContext.label")} name="stageContext" placeholder={t("applications.form.stageContext.placeholder")} state={state} />
+        <h2 className={formStyles.sectionTitle}>{t("applications.form.stageHistory.title")}</h2>
+        <p className={formStyles.sectionDescription}>{t("applications.new.sections.stageHistory.description")}</p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_160px]">
+          <label className={formStyles.label}>
+            {stageLabels.APPLICATION}
+            <textarea
+              className={formStyles.textarea}
+              onChange={(event) => setApplicationStageEntry((prev) => ({ ...prev, text: event.target.value }))}
+              placeholder={t("applications.form.stageHistory.placeholder")}
+              value={applicationStageEntry.text}
+            />
+          </label>
+          <label className={formStyles.label}>
+            {t("applications.form.stageHistory.dateLabel")}
+            <input
+              className={formStyles.input}
+              onChange={(event) => setApplicationStageEntry((prev) => ({ ...prev, updatedAt: event.target.value }))}
+              type="date"
+              value={applicationStageEntry.updatedAt}
+            />
+          </label>
         </div>
+        <input name="stageHistory" type="hidden" value={serializeStageHistoryForForm({ APPLICATION: applicationStageEntry })} />
       </section>
 
       <section className={formStyles.section}>

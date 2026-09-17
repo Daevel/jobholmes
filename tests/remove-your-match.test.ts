@@ -171,7 +171,10 @@ test("Google Sheets keeps legacy manual cells positioned and untouched", () => {
   assert.deepEqual(newRow.slice(11, 13), ["", ""]);
   assert.deepEqual(updatedRow.slice(11, 13), ["A - Strong", "95%"]);
   assert.deepEqual(updatedRow.slice(25, 28), ["B - Stretch", "65%", "80%"]);
-  assert.equal(updatedRow[28], "Recruiter call booked.");
+  // stageHistory is absent on this fixture, so the legacy stageContext fallback applies: it's
+  // rendered as the current stage's (APPLICATION) entry — see stage-history.test.ts for the
+  // fallback itself and flattenStageHistoryForSheet's format.
+  assert.equal(updatedRow[28], "Application (2026-09-10): Recruiter call booked.");
 });
 
 type HasManualMatchFields<T> = "userMatchClass" extends keyof T ? true : "userMatchPercentage" extends keyof T ? true : false;

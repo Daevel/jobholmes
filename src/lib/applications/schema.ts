@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { stageSortOrder } from "@/lib/applications/sort-order";
 import { t } from "@/lib/i18n/translate";
 
 const matchClasses = ["A_STRONG", "B_STRETCH", "C_LONG_SHOT"] as const;
@@ -27,6 +28,32 @@ const checkboxBoolean = z.preprocess((value) => {
   return false;
 }, z.boolean());
 
+// The new/edit forms serialize their per-stage history state as one JSON string (a single hidden
+// input) rather than dispersed name= fields — this preprocess step parses that string back into an
+// object before the record schema below validates its shape. A non-JSON string is passed through
+// unchanged so it fails that validation with a clear error instead of silently vanishing.
+const stageHistoryEntrySchema = z.object({
+  text: z.string().trim().max(10000),
+  updatedAt: z.string().min(1).max(40),
+});
+const stageHistoryField = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") return value;
+    if (!value.trim()) return undefined;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  },
+  z
+    .record(z.string(), stageHistoryEntrySchema)
+    .refine((value) => Object.keys(value).every((key) => (stageSortOrder as readonly string[]).includes(key)), {
+      message: t("applications.validation.invalidStageHistory"),
+    })
+    .optional(),
+);
+
 export const baseApplicationFields = z
   .object({
     appliedAt: z.coerce.date({ error: t("applications.validation.appliedDateRequired") }),
@@ -47,7 +74,11 @@ export const baseApplicationFields = z
     salaryMin: optionalPositiveInteger,
     salaryMax: optionalPositiveInteger,
     currency: optionalTrimmedString(10),
+    // Legacy free-text field — no longer written by the new/edit application forms (which submit
+    // stageHistory below instead), kept only for legacyApplicationImportSchema and historical rows.
+    // See src/lib/applications/stage-history.ts.
     stageContext: optionalText,
+    stageHistory: stageHistoryField,
     notes: optionalText,
     coverLetter: optionalTrimmedString(10000),
   })

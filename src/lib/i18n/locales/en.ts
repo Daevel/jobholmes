@@ -98,6 +98,7 @@ export const en = {
       salaryMaxBelowMin: "Salary max must not be lower than salary min",
       countryRequiredUnlessRemoteOnly: "Country is required unless Remote only is selected",
       matchPercentageMustBeInteger: "Match percentage must be an integer",
+      invalidStageHistory: "Invalid stage history.",
     },
     form: {
       sections: {
@@ -140,6 +141,12 @@ export const en = {
       salaryMax: { label: "Salary max", placeholder: "90000" },
       currency: { label: "Currency", placeholder: "EUR" },
       stageContext: { label: "Stage context", placeholder: "Submission details, recruiter feedback, or next steps..." },
+      stageHistory: {
+        title: "Stage history",
+        description: "One note per stage reached so far — advancing to a new stage adds a fresh, empty entry without touching earlier ones.",
+        dateLabel: "Date",
+        placeholder: "Submission details, recruiter feedback, or next steps...",
+      },
       rejectionReason: { label: "Rejection reason" },
       notes: { placeholder: "Context, recruiter notes, next steps..." },
       coverLetter: { label: "Cover letter", placeholder: "Write or paste your cover letter here..." },
@@ -163,10 +170,7 @@ export const en = {
       sections: {
         basicInfo: { description: "The minimum details needed to identify this application." },
         jobDescription: { description: "Paste the job description so JobHolmes can extract role details and compare the position against your selected CV." },
-        applicationContext: {
-          title: "Application context",
-          description: "Add context relevant to this application stage, such as submission details or early feedback.",
-        },
+        stageHistory: { description: "Add context relevant to this application's current stage, such as submission details or early feedback." },
       },
       submitButton: "Add application",
       errors: {
@@ -256,7 +260,7 @@ export const en = {
         outcome: "Outcome",
         responseDate: "Response date",
         daysToResponse: "Days to response",
-        stageContext: "Stage context",
+        stageHistoryEmpty: "No stage notes yet.",
         rejectionReason: "Rejection reason",
       },
       compensation: {

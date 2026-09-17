@@ -7,8 +7,9 @@ import { initialUpdateApplicationFormState, type UpdateApplicationFormState } fr
 import { Button, ButtonLink, formStyles } from "@/components/form-ui";
 import { SourceField, type SourceFieldHandle } from "@/components/source-field";
 import { determineCvRejectionPromptOptions } from "@/lib/applications/cv-rejection-prompt";
-import { outcomeLabels, stageLabels } from "@/lib/applications/display";
+import { formatDateInput, outcomeLabels, stageLabels } from "@/lib/applications/display";
 import { shouldShowRejectionReason } from "@/lib/applications/rejection-reason";
+import { parseStageHistoryFormValue, reachedStages, serializeStageHistoryForForm, type ApplicationStage, type StageHistory } from "@/lib/applications/stage-history";
 import { t } from "@/lib/i18n/translate";
 
 // Reuses the i18n-sourced labels from display.ts instead of duplicating this exact enum/label
@@ -25,12 +26,24 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
   const [state, formAction, pending] = useActionState(updateApplicationAction.bind(null, applicationId), initialUpdateApplicationFormState);
   const values = state.values ?? defaults;
   const [outcome, setOutcome] = useState(values.outcome ?? "");
+  const [stage, setStage] = useState<ApplicationStage>((values.stage as ApplicationStage) || "APPLICATION");
+  const [stageHistory, setStageHistory] = useState<StageHistory>(() => parseStageHistoryFormValue(values.stageHistory));
   const sourceFieldRef = useRef<SourceFieldHandle>(null);
   const [remoteOnly, setRemoteOnly] = useState(values.remoteOnly === "true" || values.remoteOnly === "on");
 
   const [cvPrompt, setCvPrompt] = useState<{ cvDocumentId: string; otherApplicationsUsingCv: number } | null>(null);
   const [cvPromptBusy, setCvPromptBusy] = useState(false);
   const [cvPromptError, setCvPromptError] = useState<string | null>(null);
+
+  const today = formatDateInput(new Date());
+
+  function updateStageEntryText(stageKey: ApplicationStage, text: string) {
+    setStageHistory((prev) => ({ ...prev, [stageKey]: { text, updatedAt: prev[stageKey]?.updatedAt ?? today } }));
+  }
+
+  function updateStageEntryDate(stageKey: ApplicationStage, updatedAt: string) {
+    setStageHistory((prev) => ({ ...prev, [stageKey]: { text: prev[stageKey]?.text ?? "", updatedAt } }));
+  }
 
   useEffect(() => {
     if (state.cvRejectionPrompt) setCvPrompt(state.cvRejectionPrompt);
@@ -141,9 +154,28 @@ export function EditApplicationForm({ applicationId, defaults, cvs, sources }: {
         <h2 className={formStyles.sectionTitle}>{t("applications.edit.sections.applicationStatus.title")}</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           <SelectField label={t("applications.form.outcome.label")} name="outcome" onChange={(event) => setOutcome(event.target.value)} options={outcomeOptions} state={state} values={values} />
-          <SelectField label={t("applications.form.stage.label")} name="stage" options={stageOptions} state={state} values={values} />
+          <SelectField label={t("applications.form.stage.label")} name="stage" onChange={(event) => setStage(event.target.value as ApplicationStage)} options={stageOptions} state={state} values={values} />
           <Field label={t("applications.form.responseDate.label")} name="responseAt" state={state} type="date" values={values} />
-          <TextareaField className="md:col-span-3" label={t("applications.form.stageContext.label")} name="stageContext" state={state} values={values} />
+          <div className="space-y-3 md:col-span-3">
+            <h3 className={formStyles.label}>{t("applications.form.stageHistory.title")}</h3>
+            <p className={formStyles.sectionDescription}>{t("applications.form.stageHistory.description")}</p>
+            {reachedStages(stage).map((stageKey) => {
+              const entry = stageHistory[stageKey] ?? { text: "", updatedAt: today };
+              return (
+                <div className="grid gap-3 rounded-lg border border-slate-200 p-3 sm:grid-cols-[1fr_160px]" key={stageKey}>
+                  <label className={formStyles.label}>
+                    {stageLabels[stageKey]}
+                    <textarea className={formStyles.textarea} onChange={(event) => updateStageEntryText(stageKey, event.target.value)} value={entry.text} />
+                  </label>
+                  <label className={formStyles.label}>
+                    {t("applications.form.stageHistory.dateLabel")}
+                    <input className={formStyles.input} onChange={(event) => updateStageEntryDate(stageKey, event.target.value)} type="date" value={entry.updatedAt} />
+                  </label>
+                </div>
+              );
+            })}
+            <input name="stageHistory" type="hidden" value={serializeStageHistoryForForm(stageHistory)} />
+          </div>
           {shouldShowRejectionReason(outcome) ? <TextareaField className="md:col-span-3" label={t("applications.form.rejectionReason.label")} name="rejectionReason" state={state} values={values} /> : null}
         </div>
       </section>

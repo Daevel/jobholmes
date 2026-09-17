@@ -145,7 +145,7 @@ async function ensureExtendedHeaders(sheets: ReturnType<typeof getGoogleSheetsCl
     spreadsheetId: config.spreadsheetId,
     range: `${config.sheetName}!Y1:AC1`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [["JD", "AI Match", "AI Match %", "AI Match Confidence", "Stage context"]] },
+    requestBody: { values: [["JD", "AI Match", "AI Match %", "AI Match Confidence", "Stage history"]] },
   });
 }
 

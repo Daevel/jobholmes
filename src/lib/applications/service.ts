@@ -111,6 +111,7 @@ type BaseApplicationValuesInput = {
   salaryMax?: number;
   currency?: string;
   stageContext?: string;
+  stageHistory?: Record<string, { text: string; updatedAt: string }>;
   notes?: string;
   coverLetter?: string;
 };
@@ -137,6 +138,7 @@ function buildBaseApplicationValues(userId: string, input: BaseApplicationValues
     outcome: "IN_PROGRESS" as const,
     stage: "APPLICATION" as const,
     stageContext: input.stageContext ?? null,
+    stageHistory: input.stageHistory ?? null,
     notes: input.notes ?? null,
     coverLetter: input.coverLetter ?? null,
   };
@@ -238,6 +240,7 @@ export async function updateApplicationForUser(userId: string, applicationId: st
       stage: input.stage,
       responseAt: input.responseAt ?? null,
       stageContext: input.stageContext ?? null,
+      stageHistory: input.stageHistory ?? null,
       rejectionReason,
       requirementsAndGaps,
       notes: input.notes ?? null,

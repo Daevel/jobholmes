@@ -4,6 +4,7 @@ import { parseRequirementsAndGaps } from "@/lib/ai/requirements-and-gaps";
 import { EditApplicationForm } from "@/app/applications/[id]/edit/form";
 import { formatDateInput } from "@/lib/applications/display";
 import { getApplicationForUser } from "@/lib/applications/service";
+import { getEffectiveStageHistory } from "@/lib/applications/stage-history";
 import { listSourcesForUser } from "@/lib/applications/sources-service";
 import { listCvsForUser } from "@/lib/cvs/service";
 import { requireCurrentUser } from "@/lib/current-user";
@@ -41,7 +42,7 @@ export default async function EditApplicationPage({ params }: { params: Promise<
     outcome: application.outcome,
     stage: application.stage,
     responseAt: formatDateInput(application.responseAt),
-    stageContext: application.stageContext ?? "",
+    stageHistory: JSON.stringify(getEffectiveStageHistory(application)),
     rejectionReason: application.rejectionReason ?? "",
     requirementsAndGaps: requirementsAndGaps.kind === "legacy" ? requirementsAndGaps.text : "",
     notes: application.notes ?? "",

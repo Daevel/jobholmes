@@ -1,4 +1,5 @@
 import type { applications } from "@/db/schema";
+import { flattenStageHistoryForSheet, getEffectiveStageHistory } from "@/lib/applications/stage-history";
 
 export type SheetApplication = typeof applications.$inferSelect;
 
@@ -58,7 +59,7 @@ export function toSheetRow(application: SheetApplication, sheetId: number, legac
     application.aiMatchClass ? matchLabels[application.aiMatchClass] : "",
     application.aiMatchPercentage === null ? "" : `${application.aiMatchPercentage}%`,
     application.aiMatchConfidence === null ? "" : `${application.aiMatchConfidence}%`,
-    application.stageContext ?? "",
+    flattenStageHistoryForSheet(getEffectiveStageHistory(application), stageLabels),
   ];
 }
 
